@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
+import 'create_post_screen.dart';
 import 'profile_screen.dart';
 
 class HomeFeedScreen extends StatelessWidget {
@@ -57,11 +58,9 @@ class HomeFeedScreen extends StatelessWidget {
           padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
             },
             child: CircleAvatar(
               radius: 18,
@@ -77,7 +76,9 @@ class HomeFeedScreen extends StatelessWidget {
   Widget _buildFab(BuildContext context) {
     return FloatingActionButton.extended(
       onPressed: () {
-        // TODO: Open create post screen
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
       },
       backgroundColor: AppColors.primarySaffron,
       foregroundColor: AppColors.whiteCard,
