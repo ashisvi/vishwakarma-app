@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   const TransactionDetailsScreen({
@@ -111,11 +111,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildStatusChip(),
-              ],
-            ),
+            Row(children: [_buildStatusChip()]),
           ],
         ),
       ),
@@ -191,10 +187,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(
-              labelEn: 'Description',
-              value: description,
-            ),
+            _buildInfoRow(labelEn: 'Description', value: description),
             const Divider(height: 24),
             _buildInfoRow(
               labelEn: 'UPI Reference ID',
@@ -202,10 +195,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               isMonospace: true,
             ),
             const Divider(height: 24),
-            _buildInfoRow(
-              labelEn: 'Added by',
-              value: addedBy,
-            ),
+            _buildInfoRow(labelEn: 'Added by', value: addedBy),
           ],
         ),
       ),
@@ -231,16 +221,14 @@ class TransactionDetailsScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: (isMonospace
-                  ? GoogleFonts.robotoMono()
-                  : GoogleFonts.notoSans())
-              .copyWith(
-            fontSize: 13,
-            color: AppColors.maroon.withValues(alpha: 0.9),
-          ),
+          style:
+              (isMonospace ? GoogleFonts.robotoMono() : GoogleFonts.notoSans())
+                  .copyWith(
+                    fontSize: 13,
+                    color: AppColors.maroon.withValues(alpha: 0.9),
+                  ),
         ),
       ],
     );
   }
 }
-

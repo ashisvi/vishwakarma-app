@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 import 'create_post_screen.dart';
-import 'profile_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeFeedScreen extends StatelessWidget {
   const HomeFeedScreen({super.key, this.isAdmin = false});

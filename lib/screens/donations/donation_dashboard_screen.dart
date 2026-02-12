@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 class DonationDashboardScreen extends StatelessWidget {
   const DonationDashboardScreen({super.key});
@@ -39,16 +39,12 @@ class DonationDashboardScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _SummaryCard(
-              balance: 152340.0,
-            ),
+            child: _SummaryCard(balance: 152340.0),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-              ),
+              decoration: const BoxDecoration(color: Colors.transparent),
               child: const _TransactionList(),
             ),
           ),
@@ -63,9 +59,7 @@ class DonationDashboardScreen extends StatelessWidget {
         icon: const Icon(Icons.volunteer_activism),
         label: Text(
           'Donate',
-          style: GoogleFonts.notoSans(
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.notoSans(fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -83,10 +77,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.goldAccent,
-          width: 2,
-        ),
+        border: Border.all(color: AppColors.goldAccent, width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -199,7 +190,9 @@ class _TransactionCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                isCredit
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
                 color: isCredit ? Colors.green.shade700 : Colors.red.shade700,
                 size: 22,
               ),
@@ -305,4 +298,3 @@ final List<DonationTransaction> _demoTransactions = [
     type: DonationType.credit,
   ),
 ];
-

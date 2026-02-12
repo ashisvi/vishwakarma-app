@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 class ImageUploadScreen extends StatefulWidget {
-  const ImageUploadScreen({
-    super.key,
-    this.initialPaths = const [],
-  });
+  const ImageUploadScreen({super.key, this.initialPaths = const []});
 
   final List<String> initialPaths;
 
@@ -154,10 +151,7 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
                   child: SizedBox(
                     width: 72,
                     height: 72,
-                    child: Image.file(
-                      File(path),
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.file(File(path), fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -278,13 +272,13 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
               itemBuilder: (context, index) {
                 final path = _paths[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      File(path),
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.file(File(path), fit: BoxFit.cover),
                   ),
                 );
               },
@@ -307,11 +301,8 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
 
   Future<void> _pickFromGallery() async {
     final picker = ImagePicker();
-    final List<XFile> files = await picker.pickMultiImage(
-      imageQuality: 85,
-    );
+    final List<XFile> files = await picker.pickMultiImage(imageQuality: 85);
     if (!mounted || files.isEmpty) return;
     setState(() => _paths.addAll(files.map((f) => f.path)));
   }
 }
-

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -78,19 +78,12 @@ class ProfileScreen extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.whiteCard.withValues(alpha: 0.15),
-              border: Border.all(
-                color: AppColors.whiteCard,
-                width: 3,
-              ),
+              border: Border.all(color: AppColors.whiteCard, width: 3),
             ),
             child: ClipOval(
               child: photoFile != null
                   ? Image.file(photoFile!, fit: BoxFit.cover)
-                  : Icon(
-                      Icons.person,
-                      size: 56,
-                      color: AppColors.whiteCard,
-                    ),
+                  : Icon(Icons.person, size: 56, color: AppColors.whiteCard),
             ),
           ),
           const SizedBox(height: 12),
@@ -222,11 +215,7 @@ class ProfileScreen extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: AppColors.primarySaffron,
-        ),
+        Icon(icon, size: 20, color: AppColors.primarySaffron),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -275,9 +264,7 @@ class ProfileScreen extends StatelessWidget {
           labelHi: 'प्रोफ़ाइल संपादित करें',
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const EditProfileScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
             );
           },
         ),
@@ -377,11 +364,7 @@ class _SecondaryActionButton extends StatelessWidget {
       height: 50,
       child: OutlinedButton.icon(
         onPressed: onTap,
-        icon: Icon(
-          icon,
-          size: 20,
-          color: AppColors.primarySaffron,
-        ),
+        icon: Icon(icon, size: 20, color: AppColors.primarySaffron),
         label: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -433,10 +416,7 @@ class _TextActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton.icon(
       onPressed: onTap,
-      icon: Icon(
-        icon,
-        color: AppColors.maroon,
-      ),
+      icon: Icon(icon, color: AppColors.maroon),
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -462,4 +442,3 @@ class _TextActionButton extends StatelessWidget {
     );
   }
 }
-

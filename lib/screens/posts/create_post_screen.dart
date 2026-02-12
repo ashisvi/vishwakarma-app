@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 import 'image_upload_screen.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -107,11 +107,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               controller: _postController,
               maxLines: 6,
               decoration: InputDecoration(
-                hintText: 'Write your announcement here...\nअपनी सूचना यहाँ लिखें...',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 14,
-                ),
+                hintText:
+                    'Write your announcement here...\nअपनी सूचना यहाँ लिखें...',
+                hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                 filled: true,
                 fillColor: AppColors.creamBackground,
                 border: OutlineInputBorder(
@@ -211,10 +209,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         child: SizedBox(
                           width: 72,
                           height: 72,
-                          child: Image.file(
-                            File(p),
-                            fit: BoxFit.cover,
-                          ),
+                          child: Image.file(File(p), fit: BoxFit.cover),
                         ),
                       ),
                     )
@@ -306,4 +301,3 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     Navigator.of(context).pop();
   }
 }
-

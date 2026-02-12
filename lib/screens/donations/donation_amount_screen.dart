@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 class DonationAmountScreen extends StatefulWidget {
   const DonationAmountScreen({super.key});
@@ -166,9 +166,7 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
               color: AppColors.maroon,
             ),
             hintText: 'Enter amount',
-            hintStyle: TextStyle(
-              color: Colors.grey.shade500,
-            ),
+            hintStyle: TextStyle(color: Colors.grey.shade500),
             filled: true,
             fillColor: AppColors.whiteCard,
             border: OutlineInputBorder(
@@ -188,10 +186,7 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
               vertical: 14,
             ),
           ),
-          style: GoogleFonts.notoSans(
-            fontSize: 16,
-            color: AppColors.maroon,
-          ),
+          style: GoogleFonts.notoSans(fontSize: 16, color: AppColors.maroon),
           onChanged: (_) => setState(() {}),
         ),
       ],
@@ -209,8 +204,9 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primarySaffron,
           foregroundColor: AppColors.whiteCard,
-          disabledBackgroundColor:
-              AppColors.primarySaffron.withValues(alpha: 0.4),
+          disabledBackgroundColor: AppColors.primarySaffron.withValues(
+            alpha: 0.4,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -252,4 +248,3 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
     );
   }
 }
-

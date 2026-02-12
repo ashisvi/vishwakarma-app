@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 import 'login_screen.dart';
 
 enum AppLanguage { english, hindi }
@@ -81,11 +81,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
             ),
           ],
         ),
-        child: Icon(
-          Icons.handyman,
-          size: 44,
-          color: AppColors.primarySaffron,
-        ),
+        child: Icon(Icons.handyman, size: 44, color: AppColors.primarySaffron),
       ),
     );
   }
@@ -131,7 +127,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         onTap: () => setState(() => _selectedLanguage = language),
         borderRadius: BorderRadius.circular(_cardBorderRadius),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: _minTouchTargetHeight * 2),
+          constraints: const BoxConstraints(
+            minHeight: _minTouchTargetHeight * 2,
+          ),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(_cardPadding),
@@ -213,7 +211,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primarySaffron,
           foregroundColor: AppColors.whiteCard,
-          disabledBackgroundColor: AppColors.primarySaffron.withValues(alpha: 0.4),
+          disabledBackgroundColor: AppColors.primarySaffron.withValues(
+            alpha: 0.4,
+          ),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -230,8 +230,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   void _onContinue() {
     if (_selectedLanguage == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 }

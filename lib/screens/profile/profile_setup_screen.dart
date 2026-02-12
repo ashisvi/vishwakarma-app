@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 import 'profile_setup_data.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -128,7 +128,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         Icon(
                           Icons.add_a_photo,
                           size: 40,
-                          color: AppColors.primarySaffron.withValues(alpha: 0.8),
+                          color: AppColors.primarySaffron.withValues(
+                            alpha: 0.8,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -170,16 +172,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.primarySaffron),
-                title: Text('Camera', style: GoogleFonts.notoSans(fontWeight: FontWeight.w500)),
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: AppColors.primarySaffron,
+                ),
+                title: Text(
+                  'Camera',
+                  style: GoogleFonts.notoSans(fontWeight: FontWeight.w500),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.primarySaffron),
-                title: Text('Gallery', style: GoogleFonts.notoSans(fontWeight: FontWeight.w500)),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.primarySaffron,
+                ),
+                title: Text(
+                  'Gallery',
+                  style: GoogleFonts.notoSans(fontWeight: FontWeight.w500),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.gallery);
@@ -187,8 +201,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               if (_profileImageFile != null)
                 ListTile(
-                  leading: const Icon(Icons.delete_outline, color: AppColors.maroon),
-                  title: Text('Remove photo', style: GoogleFonts.notoSans(fontWeight: FontWeight.w500)),
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.maroon,
+                  ),
+                  title: Text(
+                    'Remove photo',
+                    style: GoogleFonts.notoSans(fontWeight: FontWeight.w500),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     setState(() => _profileImageFile = null);
@@ -225,7 +245,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             controller: _nameController,
             textCapitalization: TextCapitalization.words,
             decoration: _inputDecoration(hint: 'Enter your name'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
         ),
         SizedBox(height: _fieldSpacing),
@@ -237,7 +258,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             controller: _fatherNameController,
             textCapitalization: TextCapitalization.words,
             decoration: _inputDecoration(hint: "Enter father's name"),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
         ),
         SizedBox(height: _fieldSpacing),
@@ -273,7 +295,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 _dateOfBirth == null
                     ? ''
                     : '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}',
-                style: GoogleFonts.notoSans(fontSize: 16, color: AppColors.maroon),
+                style: GoogleFonts.notoSans(
+                  fontSize: 16,
+                  color: AppColors.maroon,
+                ),
               ),
             ),
           ),
@@ -349,7 +374,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             controller: _addressLineController,
             maxLines: 2,
             decoration: _inputDecoration(hint: 'House no., street, landmark'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
         ),
         SizedBox(height: _fieldSpacing),
@@ -511,7 +537,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               icon: const Icon(Icons.arrow_drop_down),
               borderRadius: BorderRadius.circular(12),
               dropdownColor: AppColors.whiteCard,
-              style: GoogleFonts.notoSans(fontSize: 16, color: AppColors.maroon),
+              style: GoogleFonts.notoSans(
+                fontSize: 16,
+                color: AppColors.maroon,
+              ),
               items: items
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
@@ -558,10 +587,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_inputBorderRadius),
           ),
-          textStyle: GoogleFonts.notoSans(fontSize: 18, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.notoSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-          child: const Text('Save Profile'),            
-        ),
+        child: const Text('Save Profile'),
+      ),
     );
   }
 
@@ -603,4 +635,3 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
   }
 }
-

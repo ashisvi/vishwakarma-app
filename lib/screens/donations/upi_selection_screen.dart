@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 class UpiSelectionScreen extends StatefulWidget {
   const UpiSelectionScreen({super.key});
@@ -109,10 +109,7 @@ class _UpiSelectionScreenState extends State<UpiSelectionScreen> {
               ),
             ),
             if (selected)
-              Icon(
-                Icons.check_circle,
-                color: AppColors.primarySaffron,
-              ),
+              Icon(Icons.check_circle, color: AppColors.primarySaffron),
           ],
         ),
       ),
@@ -164,8 +161,9 @@ class _UpiSelectionScreenState extends State<UpiSelectionScreen> {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primarySaffron,
           foregroundColor: AppColors.whiteCard,
-          disabledBackgroundColor:
-              AppColors.primarySaffron.withValues(alpha: 0.4),
+          disabledBackgroundColor: AppColors.primarySaffron.withValues(
+            alpha: 0.4,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -209,12 +207,8 @@ class _UpiSelectionScreenState extends State<UpiSelectionScreen> {
 }
 
 class _UpiApp {
-  const _UpiApp({
-    required this.id,
-    required this.name,
-  });
+  const _UpiApp({required this.id, required this.name});
 
   final String id;
   final String name;
 }
-
