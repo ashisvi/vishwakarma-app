@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'screens/main_navigation_screen.dart';
 import 'theme/app_theme.dart';
+import 'services/supabase_service.dart';
 
-void main() {
+Future<void> main() async {
+  await initializeSupabase();
   runApp(const VishwakarmaYuvaSangathanApp());
 }
 
