@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vishwakarma_yuva_sangathan_app/screens/auth/login_screen.dart';
 
 import 'screens/main_navigation_screen.dart';
 import 'theme/app_theme.dart';
@@ -31,7 +32,7 @@ class VishwakarmaYuvaSangathanApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      home: const MainNavigationScreen(),
+      home: const LoginScreen(),
     );
   }
 }

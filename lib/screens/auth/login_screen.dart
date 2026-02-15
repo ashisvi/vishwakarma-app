@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/supabase_service.dart';
 import 'otp_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -277,15 +278,35 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-    // TODO: Call OTP API, then navigate to OTP verification
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => OtpVerificationScreen(
-          phoneNumber: phone.replaceAll(' ', ''),
-          countryCode: '+91',
-        ),
-      ),
+    final fullPhone = '+91' + phone.replaceAll(' ', '');
+    // show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+
+    signInWithPhone(fullPhone).then((ok) {
+      Navigator.of(context).pop(); // dismiss loader
+      if (ok) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OtpVerificationScreen(
+              phoneNumber: phone.replaceAll(' ', ''),
+              countryCode: '+91',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to send OTP. Try again.'),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 }
 

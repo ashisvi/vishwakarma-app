@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/supabase_service.dart';
 import '../profile/profile_setup_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
@@ -31,7 +32,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   int _resendSeconds = 60;
   Timer? _timer;
   static const double _boxSize = 52.0;
-  static const double _borderRadius = 14.0;
+  static const double _borderRadius = 8.0;
   static const double _buttonHeight = 56.0;
 
   @override
@@ -84,7 +85,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             _buildAppBar(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
@@ -155,7 +156,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Widget _buildOtpCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 7),
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
         borderRadius: BorderRadius.circular(20),
@@ -169,7 +170,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(4, (i) => _buildOtpBox(i)),
+        children: List.generate(6, (i) => _buildOtpBox(i)),
       ),
     );
   }
@@ -233,7 +234,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   Widget _buildVerifyButton() {
     final otp = _controllers.map((c) => c.text).join();
-    final canVerify = otp.length == 4;
+    final canVerify = otp.length == 6;
 
     return SizedBox(
       width: double.infinity,
@@ -307,24 +308,46 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   void _onVerify() {
     final otp = _controllers.map((c) => c.text).join();
-    if (otp.length != 4) return;
-    // TODO: Call verify API; for first-time users go to profile setup
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+    if (otp.length != 6) return;
+    final phone = '${widget.countryCode}${widget.phoneNumber ?? ''}';
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+
+    verifyOtp(phone, otp).then((ok) {
+      Navigator.of(context).pop();
+      if (ok) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('OTP verification failed. Please try again.'),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 
   void _onResendOtp() {
+    final phone = '${widget.countryCode}${widget.phoneNumber ?? ''}';
     _startResendTimer();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'OTP पुनः भेजा गया',
-          style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+    signInWithPhone(phone).then((ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok ? 'OTP पुनः भेजा गया' : 'OTP भेजने में विफल',
+            style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+          ),
+          backgroundColor: AppColors.maroon,
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: AppColors.maroon,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    });
   }
 }
