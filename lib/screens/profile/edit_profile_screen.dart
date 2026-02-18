@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/supabase_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({
@@ -12,6 +13,13 @@ class EditProfileScreen extends StatefulWidget {
     this.initialName = '',
     this.initialFatherName = '',
     this.initialAddress = '',
+    this.initialStateId,
+    this.initialStateName,
+    this.initialDistrictId,
+    this.initialDistrictName,
+    this.initialBlockId,
+    this.initialBlockName,
+    this.initialVillageId,
     this.initialVillage,
     this.initialPhotoFile,
   });
@@ -19,6 +27,13 @@ class EditProfileScreen extends StatefulWidget {
   final String initialName;
   final String initialFatherName;
   final String initialAddress;
+  final String? initialStateId;
+  final String? initialStateName;
+  final String? initialDistrictId;
+  final String? initialDistrictName;
+  final String? initialBlockId;
+  final String? initialBlockName;
+  final String? initialVillageId;
   final String? initialVillage;
   final File? initialPhotoFile;
 
@@ -33,7 +48,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _addressController = TextEditingController();
 
   File? _profileImageFile;
-  String? _selectedVillage;
+
+  // Location state variables (store both ID and name)
+  String? _selectedStateId;
+  String? _selectedStateName;
+  String? _selectedDistrictId;
+  String? _selectedDistrictName;
+  String? _selectedBlockId;
+  String? _selectedBlockName;
+  String? _selectedVillageId;
+  String? _selectedVillageName;
+
+  // Lists for dropdowns
+  List<Map<String, dynamic>> _states = [];
+  List<Map<String, dynamic>> _districts = [];
+  List<Map<String, dynamic>> _blocks = [];
+  List<Map<String, dynamic>> _villages = [];
 
   static const double _inputBorderRadius = 14.0;
   static const double _cardBorderRadius = 20.0;
@@ -45,8 +75,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.text = widget.initialName;
     _fatherNameController.text = widget.initialFatherName;
     _addressController.text = widget.initialAddress;
-    _selectedVillage = widget.initialVillage;
+    _selectedStateId = widget.initialStateId;
+    _selectedStateName = widget.initialStateName;
+    _selectedDistrictId = widget.initialDistrictId;
+    _selectedDistrictName = widget.initialDistrictName;
+    _selectedBlockId = widget.initialBlockId;
+    _selectedBlockName = widget.initialBlockName;
+    _selectedVillageId = widget.initialVillageId;
+    _selectedVillageName = widget.initialVillage;
     _profileImageFile = widget.initialPhotoFile;
+    _initializeLocationHierarchy();
+  }
+
+  Future<void> _initializeLocationHierarchy() async {
+    // Load states
+    await _loadStates();
+
+    // If state is selected, load districts (don't reset selection during init)
+    if (_selectedStateId != null) {
+      await _loadDistricts(_selectedStateId!, resetSelection: false);
+    }
+
+    // If district is selected, load blocks (don't reset selection during init)
+    if (_selectedDistrictId != null) {
+      await _loadBlocks(_selectedDistrictId!, resetSelection: false);
+    }
+
+    // If block is selected, load villages (don't reset selection during init)
+    if (_selectedBlockId != null) {
+      await _loadVillages(_selectedBlockId!, resetSelection: false);
+    }
   }
 
   @override
@@ -299,36 +357,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildLabeledField(
-              icon: Icons.home_outlined,
-              labelEn: 'State',
-              labelHi: 'राज्य',
-              child: _buildVillageDropdown(),
-            ),
-            const SizedBox(height: 20),
-            _buildLabeledField(
-              icon: Icons.home_outlined,
-              labelEn: 'District',
-              labelHi: 'जिला',
-              child: _buildVillageDropdown(),
-            ),
-            const SizedBox(height: 20),
-            _buildLabeledField(
-              icon: Icons.home_outlined,
-              labelEn: 'Block',
-              labelHi: 'ब्लॉक',
-              child: _buildVillageDropdown(),
-            ),
-            const SizedBox(height: 20),
-            _buildLabeledField(
-              icon: Icons.home_outlined,
-              labelEn: 'Village',
-              labelHi: 'गाँव',
-              child: _buildVillageDropdown(),
-            ),
+            _buildAddressSection(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAddressSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabeledField(
+          icon: Icons.location_city_outlined,
+          labelEn: 'State',
+          labelHi: 'राज्य',
+          child: _buildStateDropdown(),
+        ),
+        const SizedBox(height: 20),
+        _buildLabeledField(
+          icon: Icons.location_city_outlined,
+          labelEn: 'District',
+          labelHi: 'जिला',
+          child: _buildDistrictDropdown(),
+        ),
+        const SizedBox(height: 20),
+        _buildLabeledField(
+          icon: Icons.location_city_outlined,
+          labelEn: 'Block',
+          labelHi: 'ब्लॉक',
+          child: _buildBlockDropdown(),
+        ),
+        const SizedBox(height: 20),
+        _buildLabeledField(
+          icon: Icons.home_outlined,
+          labelEn: 'Village',
+          labelHi: 'गाँव',
+          child: _buildVillageDropdown(),
+        ),
+      ],
     );
   }
 
@@ -390,15 +457,105 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildVillageDropdown() {
-    final villages = const [
-      'Vishwakarma Nagar',
-      'Shivpuri',
-      'Shanti Nagar',
-      'Ganga Vihar',
-      'Ramgarh',
-    ];
+  Future<void> _loadStates() async {
+    final states = await fetchLocations(type: 'state');
+    if (mounted) {
+      setState(() {
+        _states = states;
+        // If we have an initial state id but no name, try to resolve it
+        if ((_selectedStateName == null || _selectedStateName!.isEmpty) &&
+            _selectedStateId != null) {
+          final s = _states.firstWhere(
+            (e) => e['id'] == _selectedStateId,
+            orElse: () => {},
+          );
+          if (s.isNotEmpty) _selectedStateName = s['name'];
+        }
+      });
+    }
+  }
 
+  Future<void> _loadDistricts(
+    String stateId, {
+    bool resetSelection = true,
+  }) async {
+    final districts = await fetchLocations(type: 'district', parentId: stateId);
+    if (mounted) {
+      setState(() {
+        _districts = districts;
+        if (resetSelection) {
+          _selectedDistrictId = null;
+          _selectedDistrictName = null;
+          _blocks = [];
+          _villages = [];
+        } else {
+          // try to resolve district name from id if available
+          if ((_selectedDistrictName == null ||
+                  _selectedDistrictName!.isEmpty) &&
+              _selectedDistrictId != null) {
+            final d = _districts.firstWhere(
+              (e) => e['id'] == _selectedDistrictId,
+              orElse: () => {},
+            );
+            if (d.isNotEmpty) _selectedDistrictName = d['name'];
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _loadBlocks(
+    String districtId, {
+    bool resetSelection = true,
+  }) async {
+    final blocks = await fetchLocations(type: 'block', parentId: districtId);
+    if (mounted) {
+      setState(() {
+        _blocks = blocks;
+        if (resetSelection) {
+          _selectedBlockId = null;
+          _selectedBlockName = null;
+          _villages = [];
+        } else {
+          if ((_selectedBlockName == null || _selectedBlockName!.isEmpty) &&
+              _selectedBlockId != null) {
+            final b = _blocks.firstWhere(
+              (e) => e['id'] == _selectedBlockId,
+              orElse: () => {},
+            );
+            if (b.isNotEmpty) _selectedBlockName = b['name'];
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _loadVillages(
+    String blockId, {
+    bool resetSelection = true,
+  }) async {
+    final villages = await fetchLocations(type: 'village', parentId: blockId);
+    if (mounted) {
+      setState(() {
+        _villages = villages;
+        if (resetSelection) {
+          _selectedVillageId = null;
+          _selectedVillageName = null;
+        } else {
+          if ((_selectedVillageName == null || _selectedVillageName!.isEmpty) &&
+              _selectedVillageId != null) {
+            final v = _villages.firstWhere(
+              (e) => e['id'] == _selectedVillageId,
+              orElse: () => {},
+            );
+            if (v.isNotEmpty) _selectedVillageName = v['name'];
+          }
+        }
+      });
+    }
+  }
+
+  Widget _buildStateDropdown() {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.creamBackground,
@@ -408,10 +565,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _selectedVillage,
+          value: _selectedStateName,
           isExpanded: true,
           hint: Text(
-            'Select village',
+            'Select state',
             style: GoogleFonts.notoSans(
               color: Colors.grey.shade600,
               fontSize: 14,
@@ -420,12 +577,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_drop_down),
           dropdownColor: AppColors.whiteCard,
           borderRadius: BorderRadius.circular(12),
-          items: villages
+          items: _states
               .map(
-                (v) => DropdownMenuItem<String>(
-                  value: v,
+                (s) => DropdownMenuItem<String>(
+                  value: s['name'],
                   child: Text(
-                    v,
+                    s['name'] as String,
                     style: GoogleFonts.notoSans(
                       fontSize: 14,
                       color: AppColors.maroon,
@@ -434,9 +591,211 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               )
               .toList(),
-          onChanged: (value) {
-            setState(() => _selectedVillage = value);
+          onChanged: (name) {
+            if (name != null) {
+              final state = _states.firstWhere((s) => s['name'] == name);
+              setState(() {
+                _selectedStateId = state['id'];
+                _selectedStateName = name;
+              });
+              _loadDistricts(_selectedStateId!);
+            }
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDistrictDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.creamBackground,
+        borderRadius: BorderRadius.circular(_inputBorderRadius),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedDistrictName,
+          isExpanded: true,
+          hint: Text(
+            _selectedStateName == null
+                ? 'Select state first'
+                : 'Select district',
+            style: GoogleFonts.notoSans(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          icon: const Icon(Icons.arrow_drop_down),
+          dropdownColor: AppColors.whiteCard,
+          borderRadius: BorderRadius.circular(12),
+          disabledHint: Text(
+            'Select state first',
+            style: GoogleFonts.notoSans(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          items: _selectedStateName == null
+              ? []
+              : _districts
+                    .map(
+                      (d) => DropdownMenuItem<String>(
+                        value: d['name'],
+                        child: Text(
+                          d['name'] as String,
+                          style: GoogleFonts.notoSans(
+                            fontSize: 14,
+                            color: AppColors.maroon,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+          onChanged: _selectedStateName == null
+              ? null
+              : (name) {
+                  if (name != null) {
+                    final district = _districts.firstWhere(
+                      (d) => d['name'] == name,
+                    );
+                    setState(() {
+                      _selectedDistrictId = district['id'];
+                      _selectedDistrictName = name;
+                    });
+                    _loadBlocks(_selectedDistrictId!);
+                  }
+                },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.creamBackground,
+        borderRadius: BorderRadius.circular(_inputBorderRadius),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedBlockName,
+          isExpanded: true,
+          hint: Text(
+            _selectedDistrictName == null
+                ? 'Select district first'
+                : 'Select block',
+            style: GoogleFonts.notoSans(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          icon: const Icon(Icons.arrow_drop_down),
+          dropdownColor: AppColors.whiteCard,
+          borderRadius: BorderRadius.circular(12),
+          disabledHint: Text(
+            'Select district first',
+            style: GoogleFonts.notoSans(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          items: _selectedDistrictName == null
+              ? []
+              : _blocks
+                    .map(
+                      (b) => DropdownMenuItem<String>(
+                        value: b['name'],
+                        child: Text(
+                          b['name'] as String,
+                          style: GoogleFonts.notoSans(
+                            fontSize: 14,
+                            color: AppColors.maroon,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+          onChanged: _selectedDistrictName == null
+              ? null
+              : (name) {
+                  if (name != null) {
+                    final block = _blocks.firstWhere((b) => b['name'] == name);
+                    setState(() {
+                      _selectedBlockId = block['id'];
+                      _selectedBlockName = name;
+                    });
+                    _loadVillages(_selectedBlockId!);
+                  }
+                },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVillageDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.creamBackground,
+        borderRadius: BorderRadius.circular(_inputBorderRadius),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedVillageName,
+          isExpanded: true,
+          hint: Text(
+            _selectedBlockName == null
+                ? 'Select block first'
+                : 'Select village',
+            style: GoogleFonts.notoSans(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          icon: const Icon(Icons.arrow_drop_down),
+          dropdownColor: AppColors.whiteCard,
+          borderRadius: BorderRadius.circular(12),
+          disabledHint: Text(
+            'Select block first',
+            style: GoogleFonts.notoSans(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          items: _selectedBlockName == null
+              ? []
+              : _villages
+                    .map(
+                      (v) => DropdownMenuItem<String>(
+                        value: v['name'],
+                        child: Text(
+                          v['name'] as String,
+                          style: GoogleFonts.notoSans(
+                            fontSize: 14,
+                            color: AppColors.maroon,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+          onChanged: _selectedBlockName == null
+              ? null
+              : (name) {
+                  if (name != null) {
+                    final village = _villages.firstWhere(
+                      (v) => v['name'] == name,
+                    );
+                    setState(() {
+                      _selectedVillageId = village['id'];
+                      _selectedVillageName = name;
+                    });
+                  }
+                },
         ),
       ),
     );
@@ -479,7 +838,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _onSave() {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedVillage == null || _selectedVillage!.isEmpty) {
+    if (_selectedVillageName == null || _selectedVillageName!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -493,17 +852,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    // TODO: Persist changes via API / local storage, then pop with result
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'परिवर्तन सुरक्षित कर दिए गए',
-          style: GoogleFonts.notoSansDevanagari(fontSize: 14),
-        ),
-        backgroundColor: AppColors.maroon,
-        behavior: SnackBarBehavior.floating,
-      ),
+    final data = {
+      'name': _nameController.text.trim(),
+      'father_name': _fatherNameController.text.trim(),
+      'address': _addressController.text.trim(),
+      'state_id': _selectedStateId,
+      'state': _selectedStateName,
+      'district_id': _selectedDistrictId,
+      'district': _selectedDistrictName,
+      'block_id': _selectedBlockId,
+      'block': _selectedBlockName,
+      'village_id': _selectedVillageId,
+      'village': _selectedVillageName,
+    };
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-    Navigator.of(context).pop();
+
+    upsertUserProfile(data).then((ok) {
+      Navigator.of(context).pop();
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'परिवर्तन सुरक्षित कर दिए गए',
+              style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+            ),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'सेव करने में त्रुटि हुई',
+              style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+            ),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 }

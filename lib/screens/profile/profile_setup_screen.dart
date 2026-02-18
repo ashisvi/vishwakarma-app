@@ -6,7 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../theme/app_theme.dart';
-import 'profile_setup_data.dart';
+import '../main_navigation_screen.dart';
+import '../../services/supabase_service.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -24,16 +25,54 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   DateTime? _dateOfBirth;
   File? _profileImageFile;
-  String? _selectedState;
-  String? _selectedDistrict;
-  String? _selectedBlock;
-  String? _selectedVillage;
+  String? _selectedStateId;
+  String? _selectedDistrictId;
+  String? _selectedBlockId;
+  String? _selectedVillageId;
+
+  // Track location names for display
+  String? _selectedStateName;
+  String? _selectedDistrictName;
+  String? _selectedBlockName;
+  String? _selectedVillageName;
+
+  // Lists for dropdowns
+  List<Map<String, dynamic>> _states = [];
+  List<Map<String, dynamic>> _districts = [];
+  List<Map<String, dynamic>> _blocks = [];
+  List<Map<String, dynamic>> _villages = [];
 
   static const double _inputBorderRadius = 14.0;
   static const double _cardBorderRadius = 20.0;
   static const double _sectionSpacing = 28.0;
   static const double _fieldSpacing = 20.0;
   static const double _buttonHeight = 56.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStates();
+  }
+
+  Future<void> _loadStates() async {
+    final states = await fetchLocations(type: 'state');
+    setState(() => _states = states);
+  }
+
+  Future<void> _loadDistricts(String stateId) async {
+    final districts = await fetchLocations(type: 'district', parentId: stateId);
+    setState(() => _districts = districts);
+  }
+
+  Future<void> _loadBlocks(String districtId) async {
+    final blocks = await fetchLocations(type: 'block', parentId: districtId);
+    setState(() => _blocks = blocks);
+  }
+
+  Future<void> _loadVillages(String blockId) async {
+    final villages = await fetchLocations(type: 'village', parentId: blockId);
+    setState(() => _villages = villages);
+  }
 
   @override
   void dispose() {
@@ -316,15 +355,24 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           labelEn: 'State',
           labelHi: 'राज्य',
           icon: Icons.map_outlined,
-          value: _selectedState,
-          items: ProfileSetupData.states,
-          onChanged: (v) {
+          value: _selectedStateName,
+          items: _states.map((s) => s['name'] as String).toList(),
+          onChanged: (name) {
+            final state = _states.firstWhere((s) => s['name'] == name);
             setState(() {
-              _selectedState = v;
-              _selectedDistrict = null;
-              _selectedBlock = null;
-              _selectedVillage = null;
+              _selectedStateId = state['id'];
+              _selectedStateName = name;
+              _selectedDistrictId = null;
+              _selectedDistrictName = null;
+              _selectedBlockId = null;
+              _selectedBlockName = null;
+              _selectedVillageId = null;
+              _selectedVillageName = null;
+              _districts.clear();
+              _blocks.clear();
+              _villages.clear();
             });
+            _loadDistricts(state['id']);
           },
         ),
         SizedBox(height: _fieldSpacing),
@@ -332,14 +380,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           labelEn: 'District',
           labelHi: 'जिला',
           icon: Icons.location_city_outlined,
-          value: _selectedDistrict,
-          items: ProfileSetupData.districtsFor(_selectedState),
-          onChanged: (v) {
+          value: _selectedDistrictName,
+          items: _districts.map((d) => d['name'] as String).toList(),
+          onChanged: (name) {
+            final district = _districts.firstWhere((d) => d['name'] == name);
             setState(() {
-              _selectedDistrict = v;
-              _selectedBlock = null;
-              _selectedVillage = null;
+              _selectedDistrictId = district['id'];
+              _selectedDistrictName = name;
+              _selectedBlockId = null;
+              _selectedBlockName = null;
+              _selectedVillageId = null;
+              _selectedVillageName = null;
+              _blocks.clear();
+              _villages.clear();
             });
+            _loadBlocks(district['id']);
           },
         ),
         SizedBox(height: _fieldSpacing),
@@ -347,13 +402,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           labelEn: 'Block',
           labelHi: 'ब्लॉक',
           icon: Icons.grid_view_rounded,
-          value: _selectedBlock,
-          items: ProfileSetupData.blocksFor(_selectedDistrict),
-          onChanged: (v) {
+          value: _selectedBlockName,
+          items: _blocks.map((b) => b['name'] as String).toList(),
+          onChanged: (name) {
+            final block = _blocks.firstWhere((b) => b['name'] == name);
             setState(() {
-              _selectedBlock = v;
-              _selectedVillage = null;
+              _selectedBlockId = block['id'];
+              _selectedBlockName = name;
+              _selectedVillageId = null;
+              _selectedVillageName = null;
+              _villages.clear();
             });
+            _loadVillages(block['id']);
           },
         ),
         SizedBox(height: _fieldSpacing),
@@ -361,9 +421,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           labelEn: 'Village',
           labelHi: 'गाँव',
           icon: Icons.home_outlined,
-          value: _selectedVillage,
-          items: ProfileSetupData.villagesFor(_selectedBlock),
-          onChanged: (v) => setState(() => _selectedVillage = v),
+          value: _selectedVillageName,
+          items: _villages.map((v) => v['name'] as String).toList(),
+          onChanged: (name) {
+            final village = _villages.firstWhere((v) => v['name'] == name);
+            setState(() {
+              _selectedVillageId = village['id'];
+              _selectedVillageName = name;
+            });
+          },
         ),
         SizedBox(height: _fieldSpacing),
         _buildLabeledField(
@@ -599,7 +665,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   void _onSaveProfile() {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedState == null || _selectedDistrict == null) {
+    if (_selectedStateId == null || _selectedDistrictId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -622,16 +688,54 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
       return;
     }
-    // TODO: Save profile via API
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'प्रोफ़ाइल सुरक्षित कर दिया गया',
-          style: GoogleFonts.notoSansDevanagari(fontSize: 14),
-        ),
-        backgroundColor: AppColors.maroon,
-        behavior: SnackBarBehavior.floating,
-      ),
+    // save profile via supabase
+    final userData = {
+      'name': _nameController.text.trim(),
+      'father_name': _fatherNameController.text.trim(),
+      'address_line': _addressLineController.text.trim(),
+      'pincode': _pinCodeController.text.trim(),
+      'state_id': _selectedStateId,
+      'district_id': _selectedDistrictId,
+      'block_id': _selectedBlockId,
+      'village_id': _selectedVillageId,
+      'date_of_birth': _dateOfBirth?.toIso8601String(),
+      'phone': supabase.auth.currentUser?.phone,
+    };
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+
+    upsertUserProfile(userData).then((ok) {
+      Navigator.of(context).pop();
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'प्रोफ़ाइल सुरक्षित कर दिया गया',
+              style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+            ),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'प्रोफ़ाइल सेव करने में विफल',
+              style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+            ),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 }

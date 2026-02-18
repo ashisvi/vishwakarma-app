@@ -4,29 +4,84 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/supabase_service.dart';
 import 'edit_profile_screen.dart';
+import '../auth/login_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({
-    super.key,
-    this.name = 'Rajesh Kumar',
-    this.fatherName = 'Shyam Lal',
-    this.designation = 'अध्यक्ष, युवा समिति',
-    this.phone = '+91 98765 43210',
-    this.village = 'Vishwakarma Nagar',
-    this.block = 'Block A',
-    this.district = 'Varanasi',
-    this.photoFile,
-  });
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
-  final String name;
-  final String fatherName;
-  final String designation;
-  final String phone;
-  final String village;
-  final String block;
-  final String district;
-  final File? photoFile;
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic>? _profile;
+  bool _loading = true;
+
+  // Resolved display names for location fields. We prefer explicit names
+  // (e.g., `village`) if present on the profile; otherwise we'll resolve
+  // names from the corresponding *_id fields using `fetchLocationById`.
+  String _displayVillage = '';
+  String _displayBlock = '';
+  String _displayDistrict = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() => _loading = true);
+    final p = await fetchUserProfile();
+    _profile = p;
+    await _resolveLocationNames();
+    if (!mounted) return;
+    setState(() => _loading = false);
+  }
+
+  Future<void> _resolveLocationNames() async {
+    if (_profile == null) {
+      if (mounted) {
+        setState(() {
+          _displayVillage = '';
+          _displayBlock = '';
+          _displayDistrict = '';
+        });
+      }
+      return;
+    }
+
+    // Village
+    String village = (_profile?['village'] ?? '') as String;
+    if ((village).isEmpty && _profile?['village_id'] != null) {
+      final loc = await fetchLocationById(_profile!['village_id']);
+      village = loc?['name'] ?? '';
+    }
+
+    // Block
+    String block = (_profile?['block'] ?? '') as String;
+    if ((block).isEmpty && _profile?['block_id'] != null) {
+      final loc = await fetchLocationById(_profile!['block_id']);
+      block = loc?['name'] ?? '';
+    }
+
+    // District
+    String district = (_profile?['district'] ?? '') as String;
+    if ((district).isEmpty && _profile?['district_id'] != null) {
+      final loc = await fetchLocationById(_profile!['district_id']);
+      district = loc?['name'] ?? '';
+    }
+
+    if (mounted) {
+      setState(() {
+        _displayVillage = village;
+        _displayBlock = block;
+        _displayDistrict = district;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,27 +99,35 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                children: [
-                  _buildDetailsCard(),
-                  const SizedBox(height: 24),
-                  _buildActions(context),
-                ],
-              ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: Column(
+                      children: [
+                        _buildDetailsCard(),
+                        const SizedBox(height: 24),
+                        _buildActions(context),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
+    final name = _profile?['name'] ?? '—';
+    final father = _profile?['father_name'] ?? '';
+    final designation = _profile?['designation'] ?? '';
+    final isVerified = _profile?['is_verified'] ?? false;
+    final photoUrl = _profile?['avatar_url'];
+
     return Container(
       width: double.infinity,
       color: AppColors.primarySaffron,
@@ -81,8 +144,8 @@ class ProfileScreen extends StatelessWidget {
               border: Border.all(color: AppColors.whiteCard, width: 3),
             ),
             child: ClipOval(
-              child: photoFile != null
-                  ? Image.file(photoFile!, fit: BoxFit.cover)
+              child: photoUrl != null
+                  ? Image.network(photoUrl, fit: BoxFit.cover)
                   : Icon(Icons.person, size: 56, color: AppColors.whiteCard),
             ),
           ),
@@ -98,7 +161,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'पिता का नाम: $fatherName',
+            father.isNotEmpty ? 'पिता का नाम: $father' : '',
             style: GoogleFonts.notoSansDevanagari(
               fontSize: 14,
               color: AppColors.whiteCard.withValues(alpha: 0.9),
@@ -106,38 +169,82 @@ class ProfileScreen extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.whiteCard,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified_user,
-                  size: 16,
-                  color: AppColors.primarySaffron,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  designation,
-                  style: GoogleFonts.notoSansDevanagari(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.maroon,
+          if (designation.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.whiteCard,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.verified_user,
+                    size: 16,
+                    color: AppColors.primarySaffron,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    designation,
+                    style: GoogleFonts.notoSansDevanagari(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.maroon,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isVerified
+                    ? AppColors.whiteCard
+                    : AppColors.whiteCard.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isVerified ? Icons.verified : Icons.pending,
+                    size: 16,
+                    color: isVerified
+                        ? AppColors.primarySaffron
+                        : Colors.orange,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isVerified
+                        ? 'Verified / सत्यापित'
+                        : 'Pending / प्रतीक्षमाण',
+                    style: GoogleFonts.notoSansDevanagari(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.maroon,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildDetailsCard() {
+    final phone = _profile?['phone'] ?? '';
+    final village = _displayVillage.isNotEmpty
+        ? _displayVillage
+        : (_profile?['village'] ?? '');
+    final block = _displayBlock.isNotEmpty
+        ? _displayBlock
+        : (_profile?['block'] ?? '');
+    final district = _displayDistrict.isNotEmpty
+        ? _displayDistrict
+        : (_profile?['district'] ?? '');
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -178,6 +285,13 @@ class ProfileScreen extends StatelessWidget {
               labelEn: 'Phone',
               labelHi: 'मोबाइल',
               value: phone,
+            ),
+            const Divider(height: 24),
+            _buildInfoRow(
+              icon: Icons.home_outlined,
+              labelEn: 'Address',
+              labelHi: 'पता',
+              value: _profile?['address_line'] ?? '',
             ),
             const Divider(height: 24),
             _buildInfoRow(
@@ -263,9 +377,27 @@ class ProfileScreen extends StatelessWidget {
           labelEn: 'Edit Profile',
           labelHi: 'प्रोफ़ाइल संपादित करें',
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-            );
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (_) => EditProfileScreen(
+                      initialName: _profile?['name'] ?? '',
+                      initialFatherName: _profile?['father_name'] ?? '',
+                      initialAddress: _profile?['address_line'] ?? '',
+                      initialStateId: _profile?['state_id'],
+                      initialStateName: _profile?['state'],
+                      initialDistrictId: _profile?['district_id'],
+                      initialDistrictName: _profile?['district'],
+                      initialBlockId: _profile?['block_id'],
+                      initialBlockName: _profile?['block'],
+                      initialVillageId: _profile?['village_id'],
+                      initialVillage: _profile?['village'],
+                    ),
+                  ),
+                )
+                .then((r) {
+                  if (r == true) _loadProfile();
+                });
           },
         ),
         const SizedBox(height: 12),
@@ -283,7 +415,18 @@ class ProfileScreen extends StatelessWidget {
           labelEn: 'Logout',
           labelHi: 'लॉगआउट',
           onTap: () {
-            // TODO: Handle logout
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const Center(child: CircularProgressIndicator()),
+            );
+            signOut().then((_) {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            });
           },
         ),
       ],

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../services/supabase_service.dart';
 import '../profile/profile_setup_screen.dart';
+import '../main_navigation_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   const OtpVerificationScreen({
@@ -316,12 +317,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    verifyOtp(phone, otp).then((ok) {
+    verifyOtp(phone, otp).then((ok) async {
       Navigator.of(context).pop();
       if (ok) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-        );
+        final hasProfile = await userHasProfile();
+        if (hasProfile) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
