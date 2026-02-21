@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:vishwakarma_yuva_sangathan_app/theme/app_theme.dart';
+
+import '.././services/supabase_service.dart';
+import '../theme/app_theme.dart';
 
 import './posts/home_feed_screen.dart';
 import './donations/donation_dashboard_screen.dart';
-import './profile/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -14,18 +15,41 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  bool _isUserAdmin = false;
+  bool _loadingAdminStatus = true;
 
-  final List<Widget> _screens = const [
-    HomeFeedScreen(),
-    DonationDashboardScreen(),
-    ProfileScreen(),
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final admin = await isUserAdmin();
+    if (mounted) {
+      setState(() {
+        _isUserAdmin = admin;
+        _loadingAdminStatus = false;
+      });
+    }
+  }
+
+  List<Widget> get _screens => [
+    HomeFeedScreen(isAdmin: _isUserAdmin),
+    const DonationDashboardScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final double _bottomReserve =
+        MediaQuery.of(context).viewPadding.bottom + 86.0;
+
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: Padding(
+        padding: EdgeInsets.only(bottom: _bottomReserve),
+        child: IndexedStack(index: _currentIndex, children: _screens),
+      ),
 
       bottomNavigationBar: SafeArea(
         child: Padding(

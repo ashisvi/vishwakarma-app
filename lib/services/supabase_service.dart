@@ -15,6 +15,8 @@ Future<void> initializeSupabase() async {
   );
 }
 
+// Posts functionality moved to posts_service.dart
+
 SupabaseClient get supabase => Supabase.instance.client;
 
 // Send OTP to the provided phone number. Returns true if OTP was sent successfully, false otherwise.
@@ -141,5 +143,19 @@ Future<Map<String, dynamic>?> fetchLocationById(String id) async {
   } catch (e) {
     debugPrint('fetchLocationById error: $e');
     return null;
+  }
+}
+
+/// Check if the current user is an admin.
+/// Returns true if user's role is 'admin', false otherwise.
+Future<bool> isUserAdmin() async {
+  try {
+    final profile = await fetchUserProfile();
+    if (profile == null) return false;
+    final role = profile['role'] as String?;
+    return role == 'admin';
+  } catch (e) {
+    debugPrint('isUserAdmin error: $e');
+    return false;
   }
 }

@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
 import 'image_upload_screen.dart';
+import '../../services/posts_service.dart';
+import '../../services/supabase_service.dart';
+import 'dart:io';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -286,18 +289,62 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void _onPost() {
     if (!_formKey.currentState!.validate()) return;
 
-    // TODO: send _postController.text.trim() and _imagePaths to backend / state
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'घोषणा प्रकाशित कर दी गई',
-          style: GoogleFonts.notoSansDevanagari(fontSize: 14),
-        ),
-        backgroundColor: AppColors.maroon,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // check role
+    () async {
+      final profile = await fetchUserProfile();
+      final role = profile?['role'] as String?;
+      if (!(role == 'admin' || role == 'committee')) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Permission denied: only admins/committee can post',
+              style: GoogleFonts.notoSans(),
+            ),
+          ),
+        );
+        return;
+      }
 
-    Navigator.of(context).pop();
+      // prepare files
+      final files = _imagePaths.map((p) => File(p)).toList();
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final created = await createPostWithImages(
+        content: _postController.text.trim(),
+        imageFiles: files,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // remove dialog
+
+      if (created != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'पोस्ट सफलतापूर्वक प्रकाशित हुई',
+              style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+            ),
+            backgroundColor: AppColors.maroon,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to create post',
+              style: GoogleFonts.notoSans(),
+            ),
+          ),
+        );
+      }
+    }();
   }
 }

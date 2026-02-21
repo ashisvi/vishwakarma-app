@@ -4,20 +4,32 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import 'create_post_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../services/posts_service.dart';
+import 'post_screen.dart';
 
-class HomeFeedScreen extends StatelessWidget {
+class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key, this.isAdmin = false});
 
   final bool isAdmin;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.creamBackground,
-      appBar: _buildAppBar(context),
-      body: const _HomeFeedBody(),
-      floatingActionButton: isAdmin ? _buildFab(context) : null,
-    );
+  State<HomeFeedScreen> createState() => _HomeFeedScreenState();
+}
+
+class _HomeFeedScreenState extends State<HomeFeedScreen> {
+  late Future<List<Map<String, dynamic>>> _futurePosts;
+
+  @override
+  void initState() {
+    super.initState();
+    _futurePosts = fetchPostsDetailed();
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _futurePosts = fetchPostsDetailed();
+    });
+    await _futurePosts;
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
@@ -58,9 +70,9 @@ class HomeFeedScreen extends StatelessWidget {
           padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
             onTap: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
             },
             child: CircleAvatar(
               radius: 18,
@@ -75,11 +87,16 @@ class HomeFeedScreen extends StatelessWidget {
 
   Widget _buildFab(BuildContext context) {
     return FloatingActionButton.extended(
-      onPressed: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
+      heroTag: 'home_feed_create_post_fab',
+      onPressed: () async {
+        final res = await Navigator.of(context).push<bool?>(
+          MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+        );
+        if (res == true) {
+          await _refresh();
+        }
       },
+
       backgroundColor: AppColors.primarySaffron,
       foregroundColor: AppColors.whiteCard,
       icon: const Icon(Icons.edit),
@@ -89,33 +106,156 @@ class HomeFeedScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _HomeFeedBody extends StatelessWidget {
-  const _HomeFeedBody();
 
   @override
   Widget build(BuildContext context) {
-    final posts = _demoPosts;
-    final pinned = posts.where((p) => p.isPinned).toList();
-    final regular = posts.where((p) => !p.isPinned).toList();
+    return Scaffold(
+      backgroundColor: AppColors.creamBackground,
+      appBar: _buildAppBar(context),
+      body: _HomeFeedBody(futurePosts: _futurePosts, onRefresh: _refresh),
+      floatingActionButton: widget.isAdmin ? _buildFab(context) : null,
+    );
+  }
+}
 
-    return ListView(
-      padding: const EdgeInsets.all(10),
-      children: [
-        if (pinned.isNotEmpty) ...[
-          _PinnedSection(post: pinned.first),
-          const SizedBox(height: 16),
-        ],
-        ...regular
-            .map(
-              (p) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _PostCard(post: p),
+class _HomeFeedBody extends StatefulWidget {
+  const _HomeFeedBody({required this.futurePosts, required this.onRefresh});
+
+  final Future<List<Map<String, dynamic>>> futurePosts;
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_HomeFeedBody> createState() => _HomeFeedBodyState();
+}
+
+class _HomeFeedBodyState extends State<_HomeFeedBody> {
+  List<Map<String, dynamic>> _posts = [];
+  Map<String, String?> _userReactions = {}; // postId -> 'like'|'dislike'|null
+
+  @override
+  void initState() {
+    super.initState();
+    widget.futurePosts.then((list) => _initialize(list));
+  }
+
+  void _initialize(List<Map<String, dynamic>> list) {
+    setState(() {
+      _posts = list;
+    });
+    // optionally fetch user reactions for posts in batch - simple per-post fetch for now
+    for (final p in list) {
+      final pid = p['id'] as String;
+      getUserReaction(pid).then((r) {
+        if (mounted) setState(() => _userReactions[pid] = r);
+      });
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    await widget.onRefresh();
+    final fresh = await fetchPostsDetailed();
+    setState(() {
+      _posts = fresh;
+    });
+  }
+
+  void _onReact(String postId, String type) async {
+    // optimistic update
+    final idx = _posts.indexWhere((p) => p['id'] == postId);
+    if (idx == -1) return;
+    final post = Map<String, dynamic>.from(_posts[idx]);
+    final current = _userReactions[postId];
+
+    int likes = (post['likes'] as int?) ?? 0;
+    int dislikes = (post['dislikes'] as int?) ?? 0;
+
+    if (current == type) {
+      // remove
+      if (type == 'like') likes = (likes - 1).clamp(0, 999999);
+      if (type == 'dislike') dislikes = (dislikes - 1).clamp(0, 999999);
+      _userReactions[postId] = null;
+    } else {
+      // switch
+      if (type == 'like') {
+        likes = likes + 1;
+        if (current == 'dislike') dislikes = (dislikes - 1).clamp(0, 999999);
+      } else {
+        dislikes = dislikes + 1;
+        if (current == 'like') likes = (likes - 1).clamp(0, 999999);
+      }
+      _userReactions[postId] = type;
+    }
+
+    // update local post
+    setState(() {
+      _posts[idx] = {...post, 'likes': likes, 'dislikes': dislikes};
+    });
+
+    // call backend
+    final res = await reactToPost(postId, type);
+    if (res == null && current != null && current == type) {
+      // success removal
+      return;
+    }
+    // If API returned null but we optimistically set, it's ok; we won't rollback here.
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_posts.isEmpty) {
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: widget.futurePosts,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Failed to load posts'));
+          }
+          final list = snapshot.data ?? [];
+          if (list.isEmpty) return Center(child: Text('No posts yet'));
+          _initialize(list);
+          return const SizedBox.shrink();
+        },
+      );
+    }
+
+    final pinned = _posts
+        .where((p) => (p['is_pinned'] ?? false) == true)
+        .toList();
+    final regular = _posts
+        .where((p) => (p['is_pinned'] ?? false) != true)
+        .toList();
+
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: ListView(
+        padding: const EdgeInsets.all(10),
+        children: [
+          if (pinned.isNotEmpty) ...[
+            _PinnedSection(post: _Post.fromMap(pinned.first)),
+            const SizedBox(height: 16),
+          ],
+          ...regular.map(
+            (p) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PostCard.fromMap(
+                postMap: p,
+                userReaction: _userReactions[p['id'] as String],
+                onReact: _onReact,
+                onOpenComments: (postId) async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PostScreen(postId: postId),
+                    ),
+                  );
+                  await _handleRefresh();
+                },
               ),
-            )
-            .toList(),
-      ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -177,10 +317,37 @@ class _PinnedSection extends StatelessWidget {
 }
 
 class _PostCard extends StatelessWidget {
-  const _PostCard({required this.post, this.isInsidePinned = false});
+  const _PostCard({
+    required this.post,
+    this.isInsidePinned = false,
+    this.userReaction,
+    this.onReact,
+    this.onOpenComments,
+  });
+
+  // convenience named constructor used when building from server map
+  factory _PostCard.fromMap({
+    required Map<String, dynamic> postMap,
+    String? userReaction,
+    required void Function(String postId, String type) onReact,
+    required Future<void> Function(String postId) onOpenComments,
+    bool isInsidePinned = false,
+  }) {
+    final post = _Post.fromMap(postMap);
+    return _PostCard(
+      post: post,
+      isInsidePinned: isInsidePinned,
+      userReaction: userReaction,
+      onReact: onReact,
+      onOpenComments: onOpenComments,
+    );
+  }
 
   final _Post post;
   final bool isInsidePinned;
+  final String? userReaction;
+  final void Function(String postId, String type)? onReact;
+  final Future<void> Function(String postId)? onOpenComments;
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +376,12 @@ class _PostCard extends StatelessWidget {
               _PostImageSlider(imageUrls: post.imageUrls),
             ],
             const SizedBox(height: 12),
-            _ReactionBar(post: post),
+            _ReactionBar(
+              post: post,
+              userReaction: userReaction,
+              onReact: onReact,
+              onOpenComments: onOpenComments,
+            ),
           ],
         ),
       ),
@@ -246,7 +418,7 @@ class _PostCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                post.designation,
+                post.designation ?? '',
                 style: GoogleFonts.notoSansDevanagari(
                   fontSize: 13,
                   color: AppColors.maroon.withValues(alpha: 0.8),
@@ -254,7 +426,7 @@ class _PostCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                post.timeAgo,
+                post.createdAt ?? '',
                 style: GoogleFonts.notoSans(
                   fontSize: 12,
                   color: AppColors.maroon.withValues(alpha: 0.6),
@@ -311,14 +483,35 @@ class _PostImageSliderState extends State<_PostImageSlider> {
               itemCount: widget.imageUrls.length,
               onPageChanged: (i) => setState(() => _currentIndex = i),
               itemBuilder: (context, index) {
-                // Replace with Image.network/asset when real URLs are used
+                final url = widget.imageUrls[index];
                 return Container(
                   color: AppColors.creamBackground,
                   alignment: Alignment.center,
-                  child: Icon(
-                    Icons.image,
-                    size: 56,
-                    color: AppColors.primarySaffron.withValues(alpha: 0.7),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                      errorBuilder: (context, error, stack) {
+                        return Container(
+                          color: AppColors.creamBackground,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 56,
+                            color: AppColors.primarySaffron.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 );
               },
@@ -349,31 +542,94 @@ class _PostImageSliderState extends State<_PostImageSlider> {
 }
 
 class _ReactionBar extends StatelessWidget {
-  const _ReactionBar({required this.post});
+  const _ReactionBar({
+    required this.post,
+    this.userReaction,
+    this.onReact,
+    this.onOpenComments,
+  });
 
   final _Post post;
+  final String? userReaction;
+  final void Function(String postId, String type)? onReact;
+  final Future<void> Function(String postId)? onOpenComments;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _ReactionButton(
+        _ActionReactionButton(
           icon: Icons.thumb_up_alt_outlined,
           labelHi: 'पसंद करें',
           count: post.likes,
+          active: userReaction == 'like',
+          onTap: () => onReact?.call(post.id, 'like'),
         ),
-        _ReactionButton(
+        _ActionReactionButton(
           icon: Icons.thumb_down_alt_outlined,
           labelHi: 'नापसंद करें',
           count: post.dislikes,
+          active: userReaction == 'dislike',
+          onTap: () => onReact?.call(post.id, 'dislike'),
         ),
-        _ReactionButton(
+        _ActionReactionButton(
           icon: Icons.chat_bubble_outline,
           labelHi: 'टिप्पणी',
           count: post.comments,
+          onTap: () async => await onOpenComments?.call(post.id),
         ),
       ],
+    );
+  }
+}
+
+class _ActionReactionButton extends StatelessWidget {
+  const _ActionReactionButton({
+    required this.icon,
+    required this.labelHi,
+    required this.count,
+    this.active = false,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String labelHi;
+  final int count;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 22,
+                color: active
+                    ? AppColors.primarySaffron
+                    : AppColors.maroon.withValues(alpha: 0.8),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: GoogleFonts.notoSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.maroon,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -426,9 +682,10 @@ class _ReactionButton extends StatelessWidget {
 
 class _Post {
   _Post({
+    required this.id,
     required this.authorName,
-    required this.designation,
-    required this.timeAgo,
+    this.designation,
+    this.createdAt,
     required this.content,
     this.imageUrls = const [],
     this.likes = 0,
@@ -437,50 +694,52 @@ class _Post {
     this.isPinned = false,
   });
 
+  final String id;
   final String authorName;
-  final String designation;
-  final String timeAgo;
+  final String? designation;
+  final String? createdAt;
   final String content;
   final List<String> imageUrls;
   final int likes;
   final int dislikes;
   final int comments;
   final bool isPinned;
+
+  factory _Post.fromMap(Map<String, dynamic> m) {
+    final author = m['author'] as Map<String, dynamic>?;
+    String authorName = 'Unknown';
+    String? designation;
+    if (author != null) {
+      authorName =
+          (author['name'] ??
+                  author['full_name'] ??
+                  author['display_name'] ??
+                  'Unknown')
+              as String;
+      designation = author['designation'] as String?;
+    }
+    final createdAt = m['created_at']?.toString();
+    final images =
+        (m['image_urls'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    return _Post(
+      id: m['id'] as String,
+      authorName: authorName,
+      designation: designation,
+      createdAt: createdAt,
+      content: (m['content'] ?? '') as String,
+      imageUrls: images,
+      likes: (m['likes'] is int)
+          ? m['likes'] as int
+          : int.tryParse(m['likes']?.toString() ?? '0') ?? 0,
+      dislikes: (m['dislikes'] is int)
+          ? m['dislikes'] as int
+          : int.tryParse(m['dislikes']?.toString() ?? '0') ?? 0,
+      comments: (m['comments_count'] is int)
+          ? m['comments_count'] as int
+          : int.tryParse(m['comments_count']?.toString() ?? '0') ?? 0,
+      isPinned: (m['is_pinned'] ?? false) as bool,
+    );
+  }
 }
 
-final List<_Post> _demoPosts = [
-  _Post(
-    authorName: 'Rajesh Kumar',
-    designation: 'अध्यक्ष, युवा समिति',
-    timeAgo: '2 घंटे पहले',
-    content:
-        'कल शाम 5 बजे सामुदायिक भवन में बैठक रखी गई है। सभी सदस्य समय पर पहुँचने की कृपा करें। महत्वपूर्ण निर्णय लिए जाएंगे, इसलिए उपस्थिति आवश्यक है।',
-    imageUrls: ['1', '2'],
-    likes: 42,
-    dislikes: 1,
-    comments: 12,
-    isPinned: true,
-  ),
-  _Post(
-    authorName: 'Sunita Devi',
-    designation: 'महिला मंडल सदस्य',
-    timeAgo: '4 घंटे पहले',
-    content:
-        'आने वाले त्यौहार के लिए साफ-सफाई अभियान रविवार सुबह 7 बजे से शुरू होगा। सभी युवाओं से अनुरोध है कि झाड़ू, फावड़ा आदि लेकर समय पर आएँ।',
-    imageUrls: const [],
-    likes: 35,
-    dislikes: 0,
-    comments: 8,
-  ),
-  _Post(
-    authorName: 'Amit Verma',
-    designation: 'शिक्षा सहयोगी',
-    timeAgo: 'कल',
-    content:
-        'कक्षा 10 और 12 के विद्यार्थियों के लिए निःशुल्क कोचिंग कक्षाएँ अगले सप्ताह से शुरू होंगी। इच्छुक विद्यार्थी अपना नाम इस पोस्ट पर टिप्पणी करके दर्ज कराएँ।',
-    imageUrls: ['1'],
-    likes: 51,
-    dislikes: 3,
-    comments: 19,
-  ),
-];
+// demo posts removed; feed loads real posts from backend
