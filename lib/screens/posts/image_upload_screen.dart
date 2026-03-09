@@ -294,6 +294,8 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
     final XFile? file = await picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
     );
     if (!mounted || file == null) return;
     setState(() => _paths.add(file.path));
@@ -301,7 +303,11 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
 
   Future<void> _pickFromGallery() async {
     final picker = ImagePicker();
-    final List<XFile> files = await picker.pickMultiImage(imageQuality: 85);
+    final List<XFile> files = await picker.pickMultiImage(
+      imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
+    );
     if (!mounted || files.isEmpty) return;
     setState(() => _paths.addAll(files.map((f) => f.path)));
   }

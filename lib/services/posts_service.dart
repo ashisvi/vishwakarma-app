@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'supabase_service.dart';
 
@@ -90,7 +91,7 @@ Future<List<Map<String, dynamic>>> fetchPostsDetailed({int limit = 50}) async {
       int dislikes = 0;
       for (final r in reactions) {
         if ((r['post_id'] as String) == id) {
-          final type = r['type'] as String?;
+          final type = r['reaction'] as String?;
           if (type == 'like') likes++;
           if (type == 'dislike') dislikes++;
         }
@@ -120,6 +121,11 @@ Future<List<Map<String, dynamic>>> fetchPostsDetailed({int limit = 50}) async {
 /// Upload an image file to storage bucket and return a public URL (or null).
 Future<String?> uploadPostImage(File file) async {
   try {
+    if (!await file.exists()) {
+      debugPrint('uploadPostImage: file does not exist at path ${file.path}');
+      return null;
+    }
+
     final user = supabase.auth.currentUser;
     if (user == null) return null;
     final ts = DateTime.now().toUtc().millisecondsSinceEpoch;
@@ -127,18 +133,79 @@ Future<String?> uploadPostImage(File file) async {
     final path = 'posts/${user.id}_$ts.$ext';
 
     final storage = supabase.storage.from(kPostImageBucket);
-    await storage.upload(path, file);
+    final contentType = _inferImageContentType(ext);
+    final options = FileOptions(contentType: contentType);
+
+    try {
+      await storage.upload(path, file, fileOptions: options);
+    } on StorageException catch (e) {
+      debugPrint(
+        'uploadPostImage StorageException (upload): status=${e.statusCode}, message=${e.message}',
+      );
+      return null;
+    } catch (e) {
+      debugPrint(
+        'uploadPostImage unknown error on upload, trying uploadBinary: $e',
+      );
+      try {
+        final bytes = await file.readAsBytes();
+        await storage.uploadBinary(path, bytes, fileOptions: options);
+      } on StorageException catch (e2) {
+        debugPrint(
+          'uploadPostImage StorageException (uploadBinary): status=${e2.statusCode}, message=${e2.message}',
+        );
+        return null;
+      } catch (e2) {
+        debugPrint('uploadPostImage final failure: $e2');
+        return null;
+      }
+    }
 
     final publicUrl = storage.getPublicUrl(path);
     return publicUrl;
   } catch (e) {
-    debugPrint('uploadPostImage error: $e');
+    debugPrint('uploadPostImage outer error: $e');
     return null;
   }
 }
 
-/// Create a post and associated images (if any). Returns created post map or null.
-Future<Map<String, dynamic>?> createPostWithImages({
+String _inferImageContentType(String ext) {
+  final lower = ext.toLowerCase();
+  switch (lower) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+    case 'heif':
+      return 'image/heic';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+class CreatePostWithImagesResult {
+  CreatePostWithImagesResult({
+    required this.post,
+    required this.uploadedCount,
+    required this.failedCount,
+    required this.errors,
+  });
+
+  final Map<String, dynamic>? post;
+  final int uploadedCount;
+  final int failedCount;
+  final List<String> errors;
+
+  bool get hasErrors => failedCount > 0 || errors.isNotEmpty;
+}
+
+/// Create a post and associated images (if any).
+/// Returns a structured result including upload stats and errors, or null on total failure.
+Future<CreatePostWithImagesResult?> createPostWithImages({
   required String content,
   List<File>? imageFiles,
 }) async {
@@ -156,25 +223,47 @@ Future<Map<String, dynamic>?> createPostWithImages({
     if (postRes == null) return null;
     final postId = postRes['id'] as String;
 
+    int uploadedCount = 0;
+    int failedCount = 0;
+    final List<String> errors = [];
+
     // upload images and insert into post_images with order_index
     if (imageFiles != null && imageFiles.isNotEmpty) {
       for (var i = 0; i < imageFiles.length; i++) {
         final file = imageFiles[i];
         final url = await uploadPostImage(file);
-        if (url == null) continue;
-        await supabase.from('post_images').insert({
-          'post_id': postId,
-          'image_url': url,
-          'order_index': i,
-        });
+        if (url == null) {
+          failedCount++;
+          errors.add('Image $i failed to upload');
+          continue;
+        }
+        try {
+          await supabase.from('post_images').insert({
+            'post_id': postId,
+            'image_url': url,
+            'order_index': i,
+          });
+          uploadedCount++;
+        } catch (e) {
+          failedCount++;
+          errors.add('Image $i DB insert error: $e');
+          debugPrint('createPostWithImages post_images insert error: $e');
+        }
       }
     }
 
     // return assembled post
     final detailed = await fetchPostsDetailed(limit: 50);
-    return detailed.firstWhere(
+    final post = detailed.firstWhere(
       (p) => p['id'] == postId,
       orElse: () => Map<String, dynamic>.from(postRes as Map),
+    );
+
+    return CreatePostWithImagesResult(
+      post: post,
+      uploadedCount: uploadedCount,
+      failedCount: failedCount,
+      errors: errors,
     );
   } catch (e) {
     debugPrint('createPostWithImages error: $e');
@@ -194,7 +283,7 @@ Future<String?> getUserReaction(String postId) async {
         .eq('user_id', user.id)
         .maybeSingle();
     if (resp == null) return null;
-    return resp['type'] as String?;
+    return resp['reaction'] as String?;
   } catch (e) {
     debugPrint('getUserReaction error: $e');
     return null;
@@ -220,12 +309,12 @@ Future<String?> reactToPost(String postId, String type) async {
       await supabase.from('post_reactions').insert({
         'post_id': postId,
         'user_id': user.id,
-        'type': type,
+        'reaction': type,
       });
       return type;
     }
 
-    final existingType = existing['type'] as String?;
+    final existingType = existing['reaction'] as String?;
     if (existingType == type) {
       // remove
       await supabase.from('post_reactions').delete().eq('id', existing['id']);
@@ -234,7 +323,7 @@ Future<String?> reactToPost(String postId, String type) async {
       // update
       await supabase
           .from('post_reactions')
-          .update({'type': type})
+          .update({'reaction': type})
           .eq('id', existing['id']);
       return type;
     }
@@ -274,13 +363,23 @@ Future<List<Map<String, dynamic>>> fetchComments(String postId) async {
 Future<Map<String, dynamic>?> addComment(String postId, String content) async {
   try {
     final user = supabase.auth.currentUser;
-    if (user == null) return null;
+    if (user == null) {
+      debugPrint('addComment: user is null');
+      return null;
+    }
+    debugPrint(
+      'addComment: attempting insert for postId=$postId, userId=${user.id}, content=$content',
+    );
     final resp = await supabase
         .from('post_comments')
         .insert({'post_id': postId, 'user_id': user.id, 'content': content})
         .select()
         .maybeSingle();
-    if (resp == null) return null;
+    debugPrint('addComment: insert response: $resp');
+    if (resp == null) {
+      debugPrint('addComment: insert returned null');
+      return null;
+    }
     return Map<String, dynamic>.from(resp as Map);
   } catch (e) {
     debugPrint('addComment error: $e');

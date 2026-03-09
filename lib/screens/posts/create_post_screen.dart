@@ -7,7 +7,6 @@ import '../../theme/app_theme.dart';
 import 'image_upload_screen.dart';
 import '../../services/posts_service.dart';
 import '../../services/supabase_service.dart';
-import 'dart:io';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -315,25 +314,48 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
 
-      final created = await createPostWithImages(
+      final result = await createPostWithImages(
         content: _postController.text.trim(),
         imageFiles: files,
+      );
+
+      debugPrint(
+        'Post creation result: '
+        'post=${result?.post}, '
+        'failedCount=${result?.failedCount}, '
+        'errors=${result?.errors}',
       );
 
       if (!mounted) return;
       Navigator.of(context).pop(); // remove dialog
 
-      if (created != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'पोस्ट सफलतापूर्वक प्रकाशित हुई',
-              style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+      if (result != null && result.post != null) {
+        // Successful post; handle image upload warnings if any.
+        if (result.failedCount > 0 || result.errors.isNotEmpty) {
+          final reason = result.errors.join(', ');
+          debugPrint(reason);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'पोस्ट प्रकाशित हुई, लेकिन कुछ फोटो अपलोड नहीं हो पाईं (कारण: $reason)',
+                style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+              ),
+              backgroundColor: AppColors.maroon,
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: AppColors.maroon,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'पोस्ट सफलतापूर्वक प्रकाशित हुई',
+                style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+              ),
+              backgroundColor: AppColors.maroon,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
