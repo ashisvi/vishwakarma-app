@@ -5,7 +5,47 @@ import '../../theme/app_theme.dart';
 import 'create_post_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../services/posts_service.dart';
-import 'post_screen.dart';
+import 'post_detail_screen.dart';
+
+String _formatDate(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) return '';
+  try {
+    final dt = DateTime.parse(dateStr).toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays > 7) {
+      return '${_monthName(dt.month)} ${dt.day}, ${dt.year}';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  } catch (_) {
+    return dateStr;
+  }
+}
+
+String _monthName(int month) {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return months[month - 1];
+}
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key, this.isAdmin = false});
@@ -233,7 +273,14 @@ class _HomeFeedBodyState extends State<_HomeFeedBody> {
         padding: const EdgeInsets.all(10),
         children: [
           if (pinned.isNotEmpty) ...[
-            _PinnedSection(post: _Post.fromMap(pinned.first)),
+            _PinnedSection(
+              post: _Post.fromMap(pinned.first),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PostDetailScreen(post: pinned.first),
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
           ],
           ...regular.map(
@@ -246,11 +293,14 @@ class _HomeFeedBodyState extends State<_HomeFeedBody> {
                 onOpenComments: (postId) async {
                   await Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => PostScreen(postId: postId),
+                      builder: (_) => PostDetailScreen(post: p),
                     ),
                   );
                   await _handleRefresh();
                 },
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => PostDetailScreen(post: p)),
+                ),
               ),
             ),
           ),
@@ -261,9 +311,10 @@ class _HomeFeedBodyState extends State<_HomeFeedBody> {
 }
 
 class _PinnedSection extends StatelessWidget {
-  const _PinnedSection({required this.post});
+  const _PinnedSection({required this.post, this.onTap});
 
   final _Post post;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -280,37 +331,44 @@ class _PinnedSection extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.goldAccent.withValues(alpha: 0.12),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.goldAccent.withValues(alpha: 0.12),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.push_pin,
+                    size: 18,
+                    color: AppColors.primarySaffron,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pinned Announcement',
+                    style: GoogleFonts.notoSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.maroon,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Icon(Icons.push_pin, size: 18, color: AppColors.primarySaffron),
-                const SizedBox(width: 8),
-                Text(
-                  'Pinned Announcement',
-                  style: GoogleFonts.notoSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.maroon,
-                  ),
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: _PostCard(post: post, isInsidePinned: true),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: _PostCard(post: post, isInsidePinned: true),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -323,6 +381,7 @@ class _PostCard extends StatelessWidget {
     this.userReaction,
     this.onReact,
     this.onOpenComments,
+    this.onTap,
   });
 
   // convenience named constructor used when building from server map
@@ -332,6 +391,7 @@ class _PostCard extends StatelessWidget {
     required void Function(String postId, String type) onReact,
     required Future<void> Function(String postId) onOpenComments,
     bool isInsidePinned = false,
+    VoidCallback? onTap,
   }) {
     final post = _Post.fromMap(postMap);
     return _PostCard(
@@ -340,6 +400,7 @@ class _PostCard extends StatelessWidget {
       userReaction: userReaction,
       onReact: onReact,
       onOpenComments: onOpenComments,
+      onTap: onTap,
     );
   }
 
@@ -348,10 +409,11 @@ class _PostCard extends StatelessWidget {
   final String? userReaction;
   final void Function(String postId, String type)? onReact;
   final Future<void> Function(String postId)? onOpenComments;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
         borderRadius: BorderRadius.circular(18),
@@ -386,6 +448,11 @@ class _PostCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: card);
+    }
+    return card;
   }
 
   Widget _buildHeader() {
@@ -426,7 +493,7 @@ class _PostCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                post.createdAt ?? '',
+                _formatDate(post.createdAt),
                 style: GoogleFonts.notoSans(
                   fontSize: 12,
                   color: AppColors.maroon.withValues(alpha: 0.6),
@@ -560,14 +627,14 @@ class _ReactionBar extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _ActionReactionButton(
-          icon: Icons.thumb_up_alt_outlined,
+          icon: Icons.thumb_up,
           labelHi: 'पसंद करें',
           count: post.likes,
           active: userReaction == 'like',
           onTap: () => onReact?.call(post.id, 'like'),
         ),
         _ActionReactionButton(
-          icon: Icons.thumb_down_alt_outlined,
+          icon: Icons.thumb_down,
           labelHi: 'नापसंद करें',
           count: post.dislikes,
           active: userReaction == 'dislike',
@@ -615,7 +682,7 @@ class _ActionReactionButton extends StatelessWidget {
                 size: 22,
                 color: active
                     ? AppColors.primarySaffron
-                    : AppColors.maroon.withValues(alpha: 0.8),
+                    : AppColors.maroon.withOpacity(0.5),
               ),
               const SizedBox(width: 6),
               Text(
