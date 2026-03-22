@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
 import 'create_post_screen.dart';
-import '../profile/profile_screen.dart';
 import '../../services/posts_service.dart';
 import 'post_detail_screen.dart';
 
@@ -100,24 +99,41 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          color: AppColors.whiteCard,
-          onPressed: () {},
-        ),
-        const SizedBox(width: 4),
         Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.whiteCard.withValues(alpha: 0.1),
-              child: const Icon(Icons.person, color: AppColors.whiteCard),
+          padding: const EdgeInsets.only(right: 12),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () {},
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.whiteCard.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: AppColors.whiteCard.withValues(alpha: 0.28),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.whiteCard,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -270,7 +286,7 @@ class _HomeFeedBodyState extends State<_HomeFeedBody> {
     return RefreshIndicator(
       onRefresh: _handleRefresh,
       child: ListView(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: [
           if (pinned.isNotEmpty) ...[
             _PinnedSection(
@@ -281,11 +297,11 @@ class _HomeFeedBodyState extends State<_HomeFeedBody> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
           ...regular.map(
             (p) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 8),
               child: _PostCard.fromMap(
                 postMap: p,
                 userReaction: _userReactions[p['id'] as String],
@@ -321,8 +337,8 @@ class _PinnedSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.goldAccent, width: 2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.goldAccent, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -341,7 +357,7 @@ class _PinnedSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.goldAccent.withValues(alpha: 0.12),
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+                  top: Radius.circular(12),
                 ),
               ),
               child: Row(
@@ -353,7 +369,7 @@ class _PinnedSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Pinned Announcement',
+                    'Pinned Announcement / पिन की घोषणा',
                     style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -364,7 +380,7 @@ class _PinnedSection extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               child: _PostCard(post: post, isInsidePinned: true),
             ),
           ],
@@ -416,7 +432,7 @@ class _PostCard extends StatelessWidget {
     final card = Container(
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -426,18 +442,18 @@ class _PostCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildContent(),
             if (post.imageUrls.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _PostImageSlider(imageUrls: post.imageUrls),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             _ReactionBar(
               post: post,
               userReaction: userReaction,
@@ -456,11 +472,20 @@ class _PostCard extends StatelessWidget {
   }
 
   Widget _buildHeader() {
+    final designation = post.designation?.trim();
+    final hasDesignation = designation != null && designation.isNotEmpty;
+    final dateLabel = _formatDate(post.createdAt);
+    final metaStyle = GoogleFonts.notoSans(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      color: AppColors.maroon.withValues(alpha: 0.62),
+    );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CircleAvatar(
-          radius: 18,
+          radius: 16,
           backgroundColor: AppColors.creamBackground,
           child: Text(
             post.authorName.characters.first.toUpperCase(),
@@ -470,7 +495,7 @@ class _PostCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,27 +503,43 @@ class _PostCard extends StatelessWidget {
               Text(
                 post.authorName,
                 style: GoogleFonts.notoSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.maroon,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
-              Text(
-                post.designation ?? '',
-                style: GoogleFonts.notoSansDevanagari(
-                  fontSize: 13,
-                  color: AppColors.maroon.withValues(alpha: 0.8),
+              // One meta line: designation (when present) + date — avoids 3 stacked lines.
+              if (hasDesignation || dateLabel.isNotEmpty)
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      if (hasDesignation)
+                        TextSpan(
+                          text: designation,
+                          style: GoogleFonts.notoSansDevanagari(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.maroon.withValues(alpha: 0.82),
+                          ),
+                        ),
+                      if (hasDesignation && dateLabel.isNotEmpty)
+                        TextSpan(
+                          text: ' · ',
+                          style: metaStyle,
+                        ),
+                      if (dateLabel.isNotEmpty)
+                        TextSpan(
+                          text: dateLabel,
+                          style: metaStyle,
+                        ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _formatDate(post.createdAt),
-                style: GoogleFonts.notoSans(
-                  fontSize: 12,
-                  color: AppColors.maroon.withValues(alpha: 0.6),
-                ),
-              ),
             ],
           ),
         ),
@@ -511,9 +552,11 @@ class _PostCard extends StatelessWidget {
       post.content,
       style: GoogleFonts.notoSansDevanagari(
         fontSize: 14,
-        height: 1.5,
+        height: 1.4,
         color: AppColors.maroon.withValues(alpha: 0.95),
       ),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
@@ -542,9 +585,9 @@ class _PostImageSliderState extends State<_PostImageSlider> {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: AspectRatio(
-            aspectRatio: 4 / 3,
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 160, // compact ~160px image area
             child: PageView.builder(
               controller: _controller,
               itemCount: widget.imageUrls.length,
@@ -554,31 +597,28 @@ class _PostImageSliderState extends State<_PostImageSlider> {
                 return Container(
                   color: AppColors.creamBackground,
                   alignment: Alignment.center,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                      errorBuilder: (context, error, stack) {
-                        return Container(
-                          color: AppColors.creamBackground,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 56,
-                            color: AppColors.primarySaffron.withValues(
-                              alpha: 0.7,
-                            ),
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                    errorBuilder: (context, error, stack) {
+                      return Container(
+                        color: AppColors.creamBackground,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image,
+                          size: 56,
+                          color: AppColors.primarySaffron.withValues(
+                            alpha: 0.7,
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
@@ -591,8 +631,8 @@ class _PostImageSliderState extends State<_PostImageSlider> {
           children: List.generate(
             widget.imageUrls.length,
             (i) => Container(
-              width: 8,
-              height: 8,
+              width: 10,
+              height: 10,
               margin: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -628,23 +668,25 @@ class _ReactionBar extends StatelessWidget {
       children: [
         _ActionReactionButton(
           icon: Icons.thumb_up,
-          labelHi: 'पसंद करें',
           count: post.likes,
           active: userReaction == 'like',
+          iconColor: AppColors.primarySaffron,
           onTap: () => onReact?.call(post.id, 'like'),
         ),
         _ActionReactionButton(
           icon: Icons.thumb_down,
-          labelHi: 'नापसंद करें',
           count: post.dislikes,
           active: userReaction == 'dislike',
+          iconColor: AppColors.dislikeGrey,
           onTap: () => onReact?.call(post.id, 'dislike'),
         ),
         _ActionReactionButton(
           icon: Icons.chat_bubble_outline,
-          labelHi: 'टिप्पणी',
           count: post.comments,
-          onTap: () async => await onOpenComments?.call(post.id),
+          iconColor: AppColors.maroon.withValues(alpha: 0.75),
+          onTap: () {
+            onOpenComments?.call(post.id);
+          },
         ),
       ],
     );
@@ -654,16 +696,16 @@ class _ReactionBar extends StatelessWidget {
 class _ActionReactionButton extends StatelessWidget {
   const _ActionReactionButton({
     required this.icon,
-    required this.labelHi,
     required this.count,
     this.active = false,
+    required this.iconColor,
     this.onTap,
   });
 
   final IconData icon;
-  final String labelHi;
   final int count;
   final bool active;
+  final Color iconColor;
   final VoidCallback? onTap;
 
   @override
@@ -673,69 +715,29 @@ class _ActionReactionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: active
-                    ? AppColors.primarySaffron
-                    : AppColors.maroon.withOpacity(0.5),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '$count',
-                style: GoogleFonts.notoSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.maroon,
-                ),
-              ),
-            ],
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          decoration: BoxDecoration(
+            color: active
+                ? iconColor.withValues(alpha: 0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReactionButton extends StatelessWidget {
-  const _ReactionButton({
-    required this.icon,
-    required this.labelHi,
-    required this.count,
-  });
-
-  final IconData icon;
-  final String labelHi;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // TODO: Hook up reactions
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 22,
-                color: AppColors.maroon.withValues(alpha: 0.8),
+                size: 20,
+                color: active ? iconColor : iconColor.withValues(alpha: 0.65),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 '$count',
                 style: GoogleFonts.notoSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
                   color: AppColors.maroon,
                 ),
               ),

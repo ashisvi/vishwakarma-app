@@ -29,6 +29,29 @@ class VishwakarmaYuvaSangathanApp extends StatelessWidget {
           onSecondary: AppColors.whiteCard,
           onSurface: AppColors.maroon,
         ),
+        textTheme: TextTheme(
+          // Elder-friendly defaults when widgets don't specify their own styles.
+          bodyMedium: TextStyle(
+            fontSize: 16,
+            height: 1.4,
+            color: AppColors.maroon,
+          ),
+          bodyLarge: TextStyle(
+            fontSize: 16,
+            height: 1.4,
+            color: AppColors.maroon,
+            fontWeight: FontWeight.w600,
+          ),
+          labelLarge: TextStyle(
+            fontSize: 14,
+            height: 1.2,
+            color: AppColors.maroon,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          foregroundColor: AppColors.whiteCard,
+        ),
         scaffoldBackgroundColor: AppColors.creamBackground,
         useMaterial3: true,
       ),

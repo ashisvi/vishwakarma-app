@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/donation_service.dart';
+import 'upi_selection_screen.dart';
 
 class DonationAmountScreen extends StatefulWidget {
   const DonationAmountScreen({super.key});
@@ -13,6 +15,7 @@ class DonationAmountScreen extends StatefulWidget {
 
 class _DonationAmountScreenState extends State<DonationAmountScreen> {
   final TextEditingController _amountController = TextEditingController();
+  bool _isProcessing = false;
 
   static const List<int> _quickAmounts = [101, 501, 1100, 2100];
 
@@ -29,23 +32,38 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canDonate = _parsedAmount > 0 && !_isProcessing;
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
       appBar: AppBar(
         backgroundColor: AppColors.primarySaffron,
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          'दान राशि दर्ज करें',
-          style: GoogleFonts.notoSansDevanagari(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.whiteCard,
-          ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'दान राशि दर्ज करें',
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.whiteCard,
+              ),
+            ),
+            Text(
+              'Enter donation amount',
+              style: GoogleFonts.notoSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.whiteCard.withValues(alpha: 0.95),
+              ),
+            ),
+          ],
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
+        // Extra bottom space to avoid overlap with the floating button.
+        padding: const EdgeInsets.fromLTRB(16, 32, 16, 120),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -54,11 +72,22 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
             _buildQuickButtons(),
             const SizedBox(height: 32),
             _buildCustomAmountField(),
-            const SizedBox(height: 40),
-            _buildProceedButton(),
+            const SizedBox(height: 8),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: canDonate ? _onProceed : null,
+        backgroundColor: AppColors.primarySaffron,
+        foregroundColor: AppColors.whiteCard,
+        icon: const Icon(Icons.volunteer_activism),
+        label: Text(
+          'Donate / दान करें',
+          style: GoogleFonts.notoSans(fontWeight: FontWeight.w800),
+        ),
+        isExtended: true,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -92,7 +121,17 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
             'आप कितनी दान राशि देना चाहते हैं?',
             style: GoogleFonts.notoSansDevanagari(
               fontSize: 14,
-              color: AppColors.maroon.withValues(alpha: 0.8),
+              color: AppColors.maroon.withValues(alpha: 0.85),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'How much would you like to donate?',
+            style: GoogleFonts.notoSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.maroon.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -108,33 +147,37 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
       alignment: WrapAlignment.center,
       children: _quickAmounts.map((amt) {
         final isSelected = _parsedAmount == amt.toDouble();
-        return ChoiceChip(
-          label: Text(
-            '₹$amt',
-            style: GoogleFonts.notoSansDevanagari(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+        final foreground = isSelected ? AppColors.whiteCard : AppColors.maroon;
+        final bg = isSelected ? AppColors.primarySaffron : AppColors.whiteCard;
+        final sideColor =
+            isSelected ? AppColors.primarySaffron : AppColors.primarySaffron.withValues(alpha: 0.35);
+
+        return SizedBox(
+          height: 48, // >=48dp tap target
+          width: 120,
+          child: FilledButton(
+            onPressed: () {
+              setState(() {
+                _amountController.text = amt.toStringAsFixed(0);
+              });
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: bg,
+              foregroundColor: foreground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: sideColor, width: 1),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: Text(
+              '₹$amt',
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-          selected: isSelected,
-          selectedColor: AppColors.primarySaffron,
-          backgroundColor: AppColors.whiteCard,
-          labelStyle: TextStyle(
-            color: isSelected ? AppColors.whiteCard : AppColors.maroon,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(
-              color: isSelected
-                  ? AppColors.primarySaffron
-                  : AppColors.primarySaffron.withValues(alpha: 0.4),
-            ),
-          ),
-          onSelected: (_) {
-            setState(() {
-              _amountController.text = amt.toStringAsFixed(0);
-            });
-          },
         );
       }).toList(),
     );
@@ -162,11 +205,11 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
           decoration: InputDecoration(
             prefixText: '₹ ',
             prefixStyle: GoogleFonts.notoSans(
-              fontSize: 16,
+              fontSize: 18,
               color: AppColors.maroon,
             ),
-            hintText: 'Enter amount',
-            hintStyle: TextStyle(color: Colors.grey.shade500),
+            hintText: 'Enter amount / राशि दर्ज करें',
+            hintStyle: TextStyle(color: Colors.grey.shade700),
             filled: true,
             fillColor: AppColors.whiteCard,
             border: OutlineInputBorder(
@@ -183,68 +226,52 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 14,
+              vertical: 18,
             ),
           ),
-          style: GoogleFonts.notoSans(fontSize: 16, color: AppColors.maroon),
+          style: GoogleFonts.notoSans(fontSize: 18, color: AppColors.maroon),
           onChanged: (_) => setState(() {}),
         ),
       ],
     );
   }
 
-  Widget _buildProceedButton() {
-    final canProceed = _parsedAmount > 0;
+  // Proceed UI is handled by the floating action button.
 
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: FilledButton(
-        onPressed: canProceed ? _onProceed : null,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primarySaffron,
-          foregroundColor: AppColors.whiteCard,
-          disabledBackgroundColor: AppColors.primarySaffron.withValues(
-            alpha: 0.4,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          textStyle: GoogleFonts.notoSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Proceed to Pay'),
-            const SizedBox(width: 8),
-            Text(
-              'भुगतान जारी रखें',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onProceed() {
+  Future<void> _onProceed() async {
     if (_parsedAmount <= 0) return;
-    // TODO: Navigate to UPI selection / payment flow with _parsedAmount
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '₹${_parsedAmount.toStringAsFixed(2)} के लिए भुगतान प्रक्रिया शुरू होगी',
-          style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+    setState(() => _isProcessing = true);
+
+    try {
+      final intent = await createDonationIntent(_parsedAmount);
+      if (intent == null || intent['id'] == null) {
+        throw Exception('Unable to create donation intent');
+      }
+
+      final intentId = intent['id'] as String;
+      final completed = await Navigator.of(context).push<bool?>(
+        MaterialPageRoute(
+          builder: (_) =>
+              UpiSelectionScreen(intentId: intentId, amount: _parsedAmount),
         ),
-        backgroundColor: AppColors.maroon,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+
+      if (completed == true) {
+        if (mounted) Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Donation failed: ${e.toString()}',
+            style: GoogleFonts.notoSansDevanagari(fontSize: 14),
+          ),
+          backgroundColor: AppColors.maroon,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
   }
 }

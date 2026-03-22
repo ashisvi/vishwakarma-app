@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../services/supabase_service.dart';
 import '../../services/posts_service.dart';
 
 String _formatDate(String? dateStr) {
@@ -128,302 +129,281 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final imageUrls = post['image_urls'] as List<String>? ?? [];
     final content = post['content'] as String? ?? '';
     final createdAt = post['created_at']?.toString() ?? '';
+    final currentUserId = supabase.auth.currentUser?.id;
 
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
       appBar: AppBar(
         backgroundColor: AppColors.primarySaffron,
-        title: Text(
-          'Post Details',
-          style: GoogleFonts.notoSans(fontWeight: FontWeight.w600),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Post Details',
+              style: GoogleFonts.notoSans(fontWeight: FontWeight.w700),
+            ),
+            Text(
+              'पोस्ट विवरण',
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white.withValues(alpha: 0.95),
+              ),
+            ),
+          ],
         ),
       ),
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Post Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.whiteCard,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _futureComments,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Failed to load comments',
+                      style: GoogleFonts.notoSans(
+                        color: Colors.grey,
+                      ),
                     ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Author info
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: AppColors.primarySaffron
-                                  .withValues(alpha: 0.2),
-                              child: Text(
-                                (author?['name'] ?? 'U')
-                                    .toString()
-                                    .characters
-                                    .first
-                                    .toUpperCase(),
-                                style: TextStyle(color: AppColors.maroon),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    author?['name'] ?? 'User',
-                                    style: GoogleFonts.notoSans(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.maroon,
-                                    ),
-                                  ),
-                                  Text(
-                                    _formatDate(createdAt),
-                                    style: GoogleFonts.notoSans(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Content
-                        Text(
-                          content,
-                          style: GoogleFonts.notoSansDevanagari(
-                            fontSize: 16,
-                            color: AppColors.maroon,
+                  );
+                }
+
+                final comments = snapshot.data ?? [];
+
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  children: [
+                    // Post Card
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.whiteCard,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Images
-                        if (imageUrls.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: AspectRatio(
-                              aspectRatio: 4 / 3,
-                              child: PageView.builder(
-                                itemCount: imageUrls.length,
-                                itemBuilder: (context, index) {
-                                  return Image.network(
-                                    imageUrls[index],
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    },
-                                    errorBuilder: (context, error, stack) {
-                                      return Container(
-                                        color: AppColors.creamBackground,
-                                        alignment: Alignment.center,
-                                        child: Icon(
-                                          Icons.broken_image,
-                                          size: 56,
-                                          color: AppColors.primarySaffron
-                                              .withValues(alpha: 0.7),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Author info
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.primarySaffron
+                                    .withValues(alpha: 0.18),
+                                child: Text(
+                                  (author?['name'] ?? 'U')
+                                      .toString()
+                                      .trim()
+                                      .characters
+                                      .first
+                                      .toUpperCase(),
+                                  style: GoogleFonts.notoSans(
+                                    color: AppColors.maroon,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      author?['name'] ?? 'User',
+                                      style: GoogleFonts.notoSans(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.maroon,
+                                      ),
+                                    ),
+                                    Text(
+                                      _formatDate(createdAt),
+                                      style: GoogleFonts.notoSans(
+                                        fontSize: 12,
+                                        color: AppColors.maroon.withValues(
+                                          alpha: 0.55,
                                         ),
-                                      );
-                                    },
-                                  );
-                                },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Content
+                          Text(
+                            content,
+                            style: GoogleFonts.notoSansDevanagari(
+                              fontSize: 16,
+                              height: 1.4,
+                              color: AppColors.maroon,
                             ),
                           ),
-                        const SizedBox(height: 16),
-                        // Reactions
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.thumb_up,
-                                color: _userReaction == 'like'
-                                    ? AppColors.primarySaffron
-                                    : Colors.grey,
-                              ),
-                              onPressed: () => _react('like'),
-                            ),
-                            Text(
-                              '$_likes',
-                              style: GoogleFonts.notoSans(
-                                color: AppColors.maroon,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            IconButton(
-                              icon: Icon(
-                                Icons.thumb_down,
-                                color: _userReaction == 'dislike'
-                                    ? AppColors.primarySaffron
-                                    : Colors.grey,
-                              ),
-                              onPressed: () => _react('dislike'),
-                            ),
-                            Text(
-                              '$_dislikes',
-                              style: GoogleFonts.notoSans(
-                                color: AppColors.maroon,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Comments Section
-                  Text(
-                    'Comments',
-                    style: GoogleFonts.notoSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.maroon,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FutureBuilder<List<Map<String, dynamic>>>(
-                    future: _futureComments,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            'Failed to load comments',
-                            style: GoogleFonts.notoSans(color: Colors.grey),
-                          ),
-                        );
-                      }
-                      final comments = snapshot.data ?? [];
-                      if (comments.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'No comments yet',
-                            style: GoogleFonts.notoSans(color: Colors.grey),
-                          ),
-                        );
-                      }
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: comments.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final comment = comments[index];
-                          final userName = comment['user_name'] ?? 'User';
-                          final content = comment['content'] as String? ?? '';
-                          final time = comment['created_at']?.toString() ?? '';
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteCard,
+                          if (imageUrls.isNotEmpty) ...[
+                            const SizedBox(height: 14),
+                            ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                              child: SizedBox(
+                                height: 160,
+                                child: PageView.builder(
+                                  itemCount: imageUrls.length,
+                                  itemBuilder: (context, index) {
+                                    return Image.network(
+                                      imageUrls[index],
+                                      fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, progress) {
+                                        if (progress == null) return child;
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stack) {
+                                        return Container(
+                                          color: AppColors.creamBackground,
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.broken_image,
+                                            size: 56,
+                                            color: AppColors.primarySaffron
+                                                .withValues(alpha: 0.7),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
-                              ],
+                              ),
                             ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: AppColors.primarySaffron
-                                      .withValues(alpha: 0.2),
-                                  child: Text(
-                                    userName
-                                        .toString()
-                                        .characters
-                                        .first
-                                        .toUpperCase(),
-                                    style: TextStyle(color: AppColors.maroon),
-                                  ),
+                          ],
+                          const SizedBox(height: 14),
+                          // Reactions (bigger tap targets)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _PostReactionButton(
+                                  icon: Icons.thumb_up,
+                                  count: _likes,
+                                  active: _userReaction == 'like',
+                                  iconColor: AppColors.primarySaffron,
+                                  onPressed: () => _react('like'),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        userName,
-                                        style: GoogleFonts.notoSans(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.maroon,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        content,
-                                        style: GoogleFonts.notoSansDevanagari(
-                                          fontSize: 14,
-                                          color: AppColors.maroon,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        _formatDate(time),
-                                        style: GoogleFonts.notoSans(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _PostReactionButton(
+                                  icon: Icons.thumb_down,
+                                  count: _dislikes,
+                                  active: _userReaction == 'dislike',
+                                  iconColor: AppColors.dislikeGrey,
+                                  onPressed: () => _react('dislike'),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Comments Section
+                    Text(
+                      'Comments',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.maroon,
+                      ),
+                    ),
+                    Text(
+                      'टिप्पणियाँ',
+                      style: GoogleFonts.notoSansDevanagari(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.maroon.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (comments.isEmpty)
+                      Text(
+                        'No comments yet / अभी कोई टिप्पणी नहीं',
+                        style: GoogleFonts.notoSans(
+                          color: Colors.grey,
+                        ),
+                      )
+                    else
+                      ...List.generate(comments.length, (i) {
+                        final comment = comments[i];
+                        final isOwn = currentUserId != null &&
+                            comment['user_id']?.toString() == currentUserId;
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: i == comments.length - 1 ? 0 : 12,
+                          ),
+                          child: _CommentCard(
+                            isOwn: isOwn,
+                            userName: comment['user_name']?.toString() ?? 'User',
+                            content: comment['content'] as String? ?? '',
+                            createdAt: comment['created_at']?.toString() ?? '',
+                          ),
+                        );
+                      }),
+                  ],
+                );
+              },
             ),
           ),
           // Comment Input
           SafeArea(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: AppColors.whiteCard,
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.whiteCard,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 14,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                height: 56,
+                child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _commentController,
                       decoration: InputDecoration(
-                        hintText: 'Write a comment...',
-                        hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                        hintText: 'Write a comment / टिप्पणी लिखें...',
+                        hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
                         fillColor: AppColors.creamBackground,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                       ),
                       minLines: 1,
-                      maxLines: 4,
+                      maxLines: 3,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -432,11 +412,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primarySaffron,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 13,
-                        vertical: 13,
+                        horizontal: 14,
+                        vertical: 12,
                       ),
                     ),
                     child: _sendingComment
@@ -451,7 +431,151 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         : const Icon(Icons.send, color: Colors.white, size: 24),
                   ),
                 ],
+                ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PostReactionButton extends StatelessWidget {
+  const _PostReactionButton({
+    required this.icon,
+    required this.count,
+    required this.active,
+    required this.onPressed,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final int count;
+  final bool active;
+  final VoidCallback onPressed;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onPressed,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: active ? iconColor.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: iconColor.withValues(alpha: active ? 0.35 : 0.14),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: active ? iconColor : iconColor.withValues(alpha: 0.65),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$count',
+              style: GoogleFonts.notoSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: AppColors.maroon,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommentCard extends StatelessWidget {
+  const _CommentCard({
+    required this.isOwn,
+    required this.userName,
+    required this.content,
+    required this.createdAt,
+  });
+
+  final bool isOwn;
+  final String userName;
+  final String content;
+  final String createdAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = userName.trim().characters.isNotEmpty
+        ? userName.trim().characters.first.toUpperCase()
+        : 'U';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isOwn
+            ? AppColors.primarySaffron.withValues(alpha: 0.10)
+            : AppColors.whiteCard,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: isOwn
+                ? AppColors.primarySaffron.withValues(alpha: 0.25)
+                : AppColors.primarySaffron.withValues(alpha: 0.18),
+            child: Text(
+              initial,
+              style: GoogleFonts.notoSans(
+                color: AppColors.maroon,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userName,
+                  style: GoogleFonts.notoSans(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.maroon,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  content,
+                  style: GoogleFonts.notoSansDevanagari(
+                    fontSize: 14,
+                    height: 1.35,
+                    color: AppColors.maroon,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _formatDate(createdAt),
+                  style: GoogleFonts.notoSans(
+                    fontSize: 12,
+                    color: AppColors.maroon.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

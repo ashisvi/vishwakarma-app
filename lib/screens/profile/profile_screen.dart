@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -101,12 +101,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          : CustomScrollView(
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _ProfileCollapsingHeaderDelegate(
+                    profile: _profile ?? <String, dynamic>{},
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  sliver: SliverToBoxAdapter(
                     child: Column(
                       children: [
                         _buildDetailsCard(),
@@ -118,119 +123,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final name = _profile?['name'] ?? '—';
-    final father = _profile?['father_name'] ?? '';
-    final designation = _profile?['designation'] ?? '';
-    final isVerified = _profile?['is_verified'] ?? false;
-    final photoUrl = _profile?['avatar_url'];
-
-    return Container(
-      width: double.infinity,
-      color: AppColors.primarySaffron,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.whiteCard.withValues(alpha: 0.15),
-              border: Border.all(color: AppColors.whiteCard, width: 3),
-            ),
-            child: ClipOval(
-              child: photoUrl != null
-                  ? Image.network(photoUrl, fit: BoxFit.cover)
-                  : Icon(Icons.person, size: 56, color: AppColors.whiteCard),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            name,
-            style: GoogleFonts.notoSans(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.whiteCard,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            father.isNotEmpty ? 'पिता का नाम: $father' : '',
-            style: GoogleFonts.notoSansDevanagari(
-              fontSize: 14,
-              color: AppColors.whiteCard.withValues(alpha: 0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          if (designation.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.whiteCard,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.verified_user,
-                    size: 16,
-                    color: AppColors.primarySaffron,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    designation,
-                    style: GoogleFonts.notoSansDevanagari(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.maroon,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isVerified
-                    ? AppColors.whiteCard
-                    : AppColors.whiteCard.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isVerified ? Icons.verified : Icons.pending,
-                    size: 16,
-                    color: isVerified
-                        ? AppColors.primarySaffron
-                        : Colors.orange,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isVerified
-                        ? 'Verified / सत्यापित'
-                        : 'Pending / प्रतीक्षमाण',
-                    style: GoogleFonts.notoSansDevanagari(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.maroon,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -249,17 +141,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -279,35 +171,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColors.maroon.withValues(alpha: 0.85),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildInfoRow(
               icon: Icons.phone,
               labelEn: 'Phone',
               labelHi: 'मोबाइल',
               value: phone,
             ),
-            const Divider(height: 24),
+            const Divider(height: 16),
             _buildInfoRow(
               icon: Icons.home_outlined,
               labelEn: 'Address',
               labelHi: 'पता',
               value: _profile?['address_line'] ?? '',
             ),
-            const Divider(height: 24),
+            const Divider(height: 16),
             _buildInfoRow(
               icon: Icons.home_outlined,
               labelEn: 'Village',
               labelHi: 'गाँव',
               value: village,
             ),
-            const Divider(height: 24),
+            const Divider(height: 16),
             _buildInfoRow(
               icon: Icons.map_outlined,
               labelEn: 'Block',
               labelHi: 'ब्लॉक',
               value: block,
             ),
-            const Divider(height: 24),
+            const Divider(height: 16),
             _buildInfoRow(
               icon: Icons.location_city_outlined,
               labelEn: 'District',
@@ -329,8 +221,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: AppColors.primarySaffron),
-        const SizedBox(width: 12),
+        Icon(icon, size: 18, color: AppColors.primarySaffron),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,6 +323,226 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     );
+  }
+}
+
+/// Pinned header: order — avatar → name → father's name → designation → status.
+/// On scroll, avatar / designation / status move away; name + father's name stay visible.
+class _ProfileCollapsingHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _ProfileCollapsingHeaderDelegate({required this.profile});
+
+  final Map<String, dynamic> profile;
+
+  /// Tight fit for avatar + text + chips so there isn’t empty space below.
+  static const double _expandedExtent = 296;
+  static const double _collapsedExtent = 88;
+
+  @override
+  double get maxExtent => _expandedExtent;
+
+  @override
+  double get minExtent => _collapsedExtent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final range = maxExtent - minExtent;
+    final t = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
+    final eased = Curves.easeOut.transform(t);
+
+    final name = profile['name']?.toString() ?? '—';
+    final father = profile['father_name']?.toString() ?? '';
+    final designation = profile['designation']?.toString() ?? '';
+    final isVerified = profile['is_verified'] == true;
+    final photoUrl = profile['avatar_url'] as String?;
+
+    final avatarDiameter = lerpDouble(100, 0, eased)!.clamp(0.0, 100.0);
+    final showAvatar = avatarDiameter > 8;
+    final chipOpacity = t < 0.55 ? (1.0 - t / 0.55).clamp(0.0, 1.0) : 0.0;
+    final showChips = chipOpacity > 0.05;
+    final collapsedLayout = eased > 0.82;
+
+    final topPad = lerpDouble(12, 0, eased)!;
+    final gapAfterAvatar = lerpDouble(10, 0, eased)!;
+    final gapBeforeChips = lerpDouble(10, 0, eased)!;
+    final bottomPad = lerpDouble(0, 4, eased)!;
+
+    return Material(
+      color: AppColors.primarySaffron,
+      child: ClipRect(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisAlignment: collapsedLayout
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (!collapsedLayout) SizedBox(height: topPad),
+              // 1. Profile icon
+              if (showAvatar)
+                Opacity(
+                  opacity: (1.0 - eased * 1.12).clamp(0.0, 1.0),
+                  child: Container(
+                    width: avatarDiameter,
+                    height: avatarDiameter,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.whiteCard.withValues(alpha: 0.15),
+                      border: Border.all(color: AppColors.whiteCard, width: 3),
+                    ),
+                    child: ClipOval(
+                      child: photoUrl != null && photoUrl.isNotEmpty
+                          ? Image.network(
+                              photoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.person,
+                                size: avatarDiameter * 0.55,
+                                color: AppColors.whiteCard,
+                              ),
+                            )
+                          : Icon(
+                              Icons.person,
+                              size: avatarDiameter * 0.55,
+                              color: AppColors.whiteCard,
+                            ),
+                    ),
+                  ),
+                ),
+              if (showAvatar && !collapsedLayout)
+                SizedBox(height: gapAfterAvatar),
+              // 2. Name
+              Text(
+                name,
+                style: GoogleFonts.notoSans(
+                  fontSize: lerpDouble(21, 19, eased),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.whiteCard,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              // 3. Father's name
+              if (father.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  'पिता का नाम: $father',
+                  style: GoogleFonts.notoSansDevanagari(
+                    fontSize: lerpDouble(15, 14, eased),
+                    color: AppColors.whiteCard.withValues(alpha: 0.92),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              // 4. Designation — 5. Status (after designation)
+              if (showChips) ...[
+                SizedBox(height: gapBeforeChips),
+                Opacity(
+                  opacity: chipOpacity,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (designation.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.whiteCard,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified_user,
+                                size: 16,
+                                color: AppColors.primarySaffron,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                designation,
+                                style: GoogleFonts.notoSansDevanagari(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.maroon,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isVerified
+                              ? AppColors.authorizedGreen.withValues(
+                                  alpha: 0.12,
+                                )
+                              : AppColors.maroon.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isVerified
+                                ? AppColors.authorizedGreen.withValues(
+                                    alpha: 0.35,
+                                  )
+                                : AppColors.maroon.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isVerified ? Icons.verified : Icons.pending,
+                              size: 16,
+                              color: isVerified
+                                  ? AppColors.authorizedGreen
+                                  : AppColors.creamBackground,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isVerified
+                                  ? 'Authorized / अधिकृत'
+                                  : 'Pending / प्रतीक्षमाण',
+                              style: GoogleFonts.notoSansDevanagari(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isVerified
+                                    ? AppColors.authorizedGreen
+                                    : AppColors.creamBackground,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (!collapsedLayout) SizedBox(height: bottomPad),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _ProfileCollapsingHeaderDelegate oldDelegate) {
+    return oldDelegate.profile != profile;
   }
 }
 

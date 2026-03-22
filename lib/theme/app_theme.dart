@@ -4,9 +4,22 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primarySaffron = Color(0xFFE65100);
-  static const Color maroon = Color(0xFF8E0000);
-  static const Color goldAccent = Color(0xFFF9A825);
-  static const Color creamBackground = Color(0xFFFFF8E1);
+  /// Softer, eye-friendly orange for primary actions and highlights.
+  static const Color primarySaffron = Color(0xFFFFB347); // #FFB347
+
+  /// Dark maroon for readable text and secondary UI.
+  static const Color maroon = Color(0xFF8B3A3A); // #8B3A3A
+
+  /// Warm accent used for outlines/badges (kept softer than pure gold).
+  static const Color goldAccent = Color(0xFFFFC46B);
+
+  /// Dislike reaction uses a neutral grey for elder-friendly contrast.
+  static const Color dislikeGrey = Color(0xFFB0B0B0);
+
+  /// Soft cream background for elder-friendly contrast.
+  static const Color creamBackground = Color(0xFFFFF8F0); // #FFF8F0
+
   static const Color whiteCard = Color(0xFFFFFFFF);
+
+  static const Color authorizedGreen = Color(0xFF2E7D32);
 }
