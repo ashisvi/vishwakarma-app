@@ -11,7 +11,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     required this.status,
     required this.dateTimeLabel,
     required this.description,
-    required this.upiReferenceId,
+    required this.paymentReferenceId,
     required this.addedBy,
   });
 
@@ -20,7 +20,7 @@ class TransactionDetailsScreen extends StatelessWidget {
   final String status;
   final String dateTimeLabel;
   final String description;
-  final String upiReferenceId;
+  final String paymentReferenceId;
   final String addedBy;
 
   @override
@@ -190,8 +190,8 @@ class TransactionDetailsScreen extends StatelessWidget {
             _buildInfoRow(labelEn: 'Description', value: description),
             const Divider(height: 24),
             _buildInfoRow(
-              labelEn: 'UPI Reference ID',
-              value: upiReferenceId,
+              labelEn: 'Payment Reference ID',
+              value: paymentReferenceId,
               isMonospace: true,
             ),
             const Divider(height: 24),

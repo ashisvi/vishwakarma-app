@@ -129,14 +129,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.3.1"
-  decimal:
-    dependency: transitive
-    description:
-      name: decimal
-      sha256: fc706a5618b81e5b367b01dd62621def37abc096f2b46a9bd9068b64c1fa36d0
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.4"
   ed25519_edwards:
     dependency: transitive
     description:
@@ -214,6 +206,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_cashfree_pg_sdk:
+    dependency: "direct main"
+    description:
+      name: flutter_cashfree_pg_sdk
+      sha256: "05f973fabc59a5721db471279ab447899921651dbf546795a5d7fb3d712b4418"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.10+48"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -251,14 +251,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_upi_india:
-    dependency: "direct main"
-    description:
-      name: flutter_upi_india
-      sha256: "75d9b0c1a99358147e3d9d871cd3c47e857b490baf668e0aaff1a5dc7c2cba90"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -313,7 +305,7 @@ packages:
     source: hosted
     version: "1.0.1"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -392,14 +384,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
-  intl:
+  js:
     dependency: transitive
     description:
-      name: intl
-      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      name: js
+      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
       url: "https://pub.dev"
     source: hosted
-    version: "0.20.2"
+    version: "0.6.7"
   jwt_decode:
     dependency: transitive
     description:
@@ -592,14 +584,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  rational:
-    dependency: transitive
-    description:
-      name: rational
-      sha256: cb808fb6f1a839e6fc5f7d8cb3b0a10e1db48b3be102de73938c627f0b636336
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.3"
   realtime_client:
     dependency: transitive
     description:
@@ -765,14 +749,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  universal_io:
-    dependency: transitive
-    description:
-      name: universal_io
-      sha256: f63cbc48103236abf48e345e07a03ce5757ea86285ed313a6a032596ed9301e2
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.1"
   url_launcher:
     dependency: transitive
     description:

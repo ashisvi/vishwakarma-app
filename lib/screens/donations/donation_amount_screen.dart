@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/donation_service.dart';
-import 'upi_selection_screen.dart';
+import 'cashfree_payment_screen.dart';
 
 class DonationAmountScreen extends StatefulWidget {
   const DonationAmountScreen({super.key});
@@ -15,6 +15,7 @@ class DonationAmountScreen extends StatefulWidget {
 
 class _DonationAmountScreenState extends State<DonationAmountScreen> {
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
   bool _isProcessing = false;
 
   static const List<int> _quickAmounts = [101, 501, 1100, 2100];
@@ -22,6 +23,7 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _messageController.dispose();
     super.dispose();
   }
 
@@ -232,6 +234,43 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
           style: GoogleFonts.notoSans(fontSize: 18, color: AppColors.maroon),
           onChanged: (_) => setState(() {}),
         ),
+        const SizedBox(height: 24),
+        Text(
+          'Donation Reason (Optional) / दान का कारण',
+          style: GoogleFonts.notoSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.maroon,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _messageController,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: 'E.g. Temple Construction / मंदिर निर्माण',
+            hintStyle: TextStyle(color: Colors.grey.shade700),
+            filled: true,
+            fillColor: AppColors.whiteCard,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(color: AppColors.primarySaffron, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 18,
+            ),
+          ),
+          style: GoogleFonts.notoSans(fontSize: 16, color: AppColors.maroon),
+        ),
       ],
     );
   }
@@ -252,7 +291,11 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
       final completed = await Navigator.of(context).push<bool?>(
         MaterialPageRoute(
           builder: (_) =>
-              UpiSelectionScreen(intentId: intentId, amount: _parsedAmount),
+              CashfreePaymentScreen(
+                intentId: intentId, 
+                amount: _parsedAmount,
+                message: _messageController.text,
+              ),
         ),
       );
 

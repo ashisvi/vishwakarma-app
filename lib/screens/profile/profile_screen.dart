@@ -293,16 +293,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
         ),
         const SizedBox(height: 12),
-        _SecondaryActionButton(
-          icon: Icons.language,
-          labelEn: 'Change Language',
-          labelHi: 'भाषा बदलें',
-          onTap: () {
-            // TODO: Navigate to language selection
-          },
-        ),
+        // TODO: Implement language change functionality
+        // _SecondaryActionButton(
+        //   icon: Icons.language,
+        //   labelEn: 'Change Language',
+        //   labelHi: 'भाषा बदलें',
+        //   onTap: () {
+        //     // TODO: Navigate to language selection
+        //   },
+        // ),
         const SizedBox(height: 12),
-        _TextActionButton(
+        _SecondaryActionButton(
           icon: Icons.logout,
           labelEn: 'Logout',
           labelHi: 'लॉगआउट',

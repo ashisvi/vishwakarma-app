@@ -25,7 +25,10 @@ class DonationDashboardScreen extends StatefulWidget {
 }
 
 class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
-  late Future<List<Map<String, dynamic>>> _futureTransactions;
+  bool _isLoading = true;
+  String? _error;
+  List<Map<String, dynamic>> _transactions = [];
+  double _balance = 0;
 
   @override
   void initState() {
@@ -33,10 +36,40 @@ class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
     _fetchTransactions();
   }
 
-  void _fetchTransactions() {
+  Future<void> _fetchTransactions() async {
     setState(() {
-      _futureTransactions = fetchTransactions();
+      _isLoading = true;
+      _error = null;
     });
+    try {
+      final txs = await fetchTransactions();
+      double bal = 0;
+      for (var tx in txs) {
+        final amount = (tx['amount'] as num?)?.toDouble() ?? 0;
+        final isCredit = tx['type'] == 'credit';
+        if (tx['status'] == 'success') {
+          if (isCredit) {
+            bal += amount;
+          } else {
+            bal -= amount;
+          }
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _transactions = txs;
+          _balance = bal;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load transactions';
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _openDonationAmount() async {
@@ -91,53 +124,44 @@ class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _SummaryCard(balance: 0),
+            child: _SummaryCard(balance: _balance, isLoading: _isLoading),
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _futureTransactions,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Failed to load transactions',
-                      style: GoogleFonts.notoSans(color: Colors.red),
-                    ),
-                  );
-                }
-                final transactions = snapshot.data ?? [];
-                if (transactions.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No transactions yet',
-                      style: GoogleFonts.notoSans(color: AppColors.maroon),
-                    ),
-                  );
-                }
-                return _TransactionList(
-                  transactions: transactions,
-                  onOpenDetails: (tx) => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => TransactionDetailsScreen(
-                        amount: (tx['amount'] as num).toDouble(),
-                        isCredit: tx['type'] == 'credit',
-                        status: tx['status'] as String? ?? '',
-                        dateTimeLabel: _formatDate(
-                          tx['created_at']?.toString(),
-                        ),
-                        description: tx['description'] as String? ?? '',
-                        upiReferenceId: tx['upi_ref'] as String? ?? '',
-                        addedBy: tx['created_by'] as String? ?? '',
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Text(
+                        _error!,
+                        style: GoogleFonts.notoSans(color: Colors.red),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    )
+                  : _transactions.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No transactions yet',
+                            style: GoogleFonts.notoSans(color: AppColors.maroon),
+                          ),
+                        )
+                      : _TransactionList(
+                          transactions: _transactions,
+                          onOpenDetails: (tx) => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => TransactionDetailsScreen(
+                                amount: (tx['amount'] as num).toDouble(),
+                                isCredit: tx['type'] == 'credit',
+                                status: tx['status'] as String? ?? '',
+                                dateTimeLabel: _formatDate(
+                                  tx['created_at']?.toString(),
+                                ),
+                                description: tx['description'] as String? ?? '',
+                                paymentReferenceId: tx['upi_ref'] as String? ?? '',
+                                addedBy: tx['created_by'] as String? ?? '',
+                              ),
+                            ),
+                          ),
+                        ),
           ),
         ],
       ),
@@ -156,73 +180,64 @@ class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.balance});
+  const _SummaryCard({required this.balance, required this.isLoading});
 
   final double balance;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.primarySaffron.withValues(alpha: 0.22),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      color: AppColors.primarySaffron,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Total balance / कुल बैलेंस',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.maroon,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '₹ ${balance.toStringAsFixed(0)}',
-                  style: GoogleFonts.notoSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.maroon,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
+      child: Column(
+        children: [
+          if (isLoading)
+            const SizedBox(
+              height: 38,
+              width: 38,
+              child: CircularProgressIndicator(color: AppColors.maroon),
+            )
+          else
             Text(
-              'समाज कोष शेष राशि / Society fund balance',
+              '₹ ${balance.toStringAsFixed(0)}',
               style: GoogleFonts.notoSansDevanagari(
-                fontSize: 14,
-                color: AppColors.maroon.withValues(alpha: 0.78),
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: AppColors.maroon,
               ),
             ),
-          ],
-        ),
+          const SizedBox(height: 8),
+          Text(
+            'समाज कोष शेष राशि / Society fund balance',
+            style: GoogleFonts.notoSansDevanagari(
+              fontSize: 14,
+              color: AppColors.maroon.withValues(alpha: 0.85),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Total verified donations collected so far',
+            style: GoogleFonts.notoSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.maroon.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -266,6 +281,15 @@ class _TransactionCard extends StatelessWidget {
     final amount = (transaction['amount'] as num?)?.toDouble() ?? 0;
     final dateTimeLabel = transaction['created_at']?.toString() ?? '';
     final description = transaction['description'] as String? ?? '';
+    final donorNameItem = transaction['users'];
+    final donorName = (donorNameItem != null && donorNameItem is Map) 
+        ? donorNameItem['name'] as String? 
+        : null;
+        
+    final defaultTitle = (donorName != null && donorName.isNotEmpty) 
+        ? donorName 
+        : 'Donation';
+        
     final amountColor = isCredit ? Colors.green.shade700 : Colors.red.shade700;
     final sign = isCredit ? '+' : '-';
 
@@ -309,13 +333,23 @@ class _TransactionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      description.isNotEmpty ? description : 'Donation',
+                      defaultTitle,
                       style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.maroon,
                       ),
                     ),
+                    if (description.isNotEmpty && description != 'Donation') ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        description,
+                        style: GoogleFonts.notoSans(
+                          fontSize: 12,
+                          color: AppColors.maroon.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       formatTransactionDate(dateTimeLabel),

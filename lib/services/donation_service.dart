@@ -7,7 +7,7 @@ Future<List<Map<String, dynamic>>> fetchTransactions() async {
   try {
     final res = await _supabase
         .from('transactions')
-        .select()
+        .select('*, users(name)')
         .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(res as List);
   } catch (e) {
@@ -32,18 +32,18 @@ Future<Map<String, dynamic>?> createDonationIntent(double amount) async {
     if (res == null) return null;
     return Map<String, dynamic>.from(res as Map);
   } catch (e) {
-    debugPrint('createDonationIntent error: $e');
+    debugPrint('createDonatioStringnIntent error: $e');
     rethrow;
   }
 }
 
-Future<bool> markIntentSuccess(String intentId, String upiRef) async {
+Future<bool> markIntentSuccess(String intentId, String paymentRef) async {
   try {
-    final res = await _supabase
+    await _supabase
         .from('donation_intents')
-        .update({'status': 'success', 'upi_ref': upiRef})
+        .update({'status': 'success', 'upi_ref': paymentRef})
         .eq('id', intentId);
-    return (res != null);
+    return true;
   } catch (e) {
     debugPrint('markIntentSuccess error: $e');
     return false;
@@ -52,11 +52,11 @@ Future<bool> markIntentSuccess(String intentId, String upiRef) async {
 
 Future<bool> markIntentFailed(String intentId) async {
   try {
-    final res = await _supabase
+    await _supabase
         .from('donation_intents')
         .update({'status': 'failed'})
         .eq('id', intentId);
-    return (res != null);
+    return true;
   } catch (e) {
     debugPrint('markIntentFailed error: $e');
     return false;
@@ -65,8 +65,9 @@ Future<bool> markIntentFailed(String intentId) async {
 
 Future<Map<String, dynamic>?> createTransaction(
   double amount,
-  String upiRef,
-) async {
+  String paymentRef, {
+  String? description,
+}) async {
   try {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -79,9 +80,11 @@ Future<Map<String, dynamic>?> createTransaction(
           'type': 'credit',
           'amount': amount,
           'status': 'success',
-          'mode': 'upi',
-          'description': 'Donation',
-          'upi_ref': upiRef,
+          'mode': 'cashfree',
+          'description': description != null && description.trim().isNotEmpty 
+              ? description.trim() 
+              : 'Donation',
+          'upi_ref': paymentRef,
           'created_by': user.id,
         })
         .select()
