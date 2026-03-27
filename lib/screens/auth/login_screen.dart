@@ -278,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-    final fullPhone = '+91' + phone.replaceAll(' ', '');
+    final fullPhone = '+91${phone.replaceAll(' ', '')}';
     // show loading
     showDialog(
       context: context,

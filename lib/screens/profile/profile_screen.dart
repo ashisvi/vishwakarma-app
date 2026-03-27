@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../services/supabase_service.dart';
 import 'edit_profile_screen.dart';
 import '../auth/login_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -293,6 +294,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
         ),
         const SizedBox(height: 12),
+        if (_profile?['role'] == 'admin' || _profile?['role'] == 'committee') ...[
+          _SecondaryActionButton(
+            icon: Icons.admin_panel_settings_outlined,
+            labelEn: 'Admin Panel',
+            labelHi: 'व्यवस्थापक पैनल',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
         // TODO: Implement language change functionality
         // _SecondaryActionButton(
         //   icon: Icons.language,

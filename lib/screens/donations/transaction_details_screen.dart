@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../../theme/app_theme.dart';
+import '../members/user_profile_screen.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
+  final double amount;
+  final bool isCredit;
+  final String status;
+  final String dateTimeLabel;
+  final String description;
+  final String paymentReferenceId;
+  final String addedBy;
+  final Map<String, dynamic>? userData;
+
   const TransactionDetailsScreen({
     super.key,
     required this.amount,
@@ -13,222 +22,306 @@ class TransactionDetailsScreen extends StatelessWidget {
     required this.description,
     required this.paymentReferenceId,
     required this.addedBy,
+    this.userData,
   });
-
-  final double amount;
-  final bool isCredit;
-  final String status;
-  final String dateTimeLabel;
-  final String description;
-  final String paymentReferenceId;
-  final String addedBy;
 
   @override
   Widget build(BuildContext context) {
-    final amountColor = isCredit ? Colors.green.shade800 : Colors.red.shade800;
-    final sign = isCredit ? '+' : '-';
+    final statusColor = _getStatusColor(status);
+    final statusIcon = _getStatusIcon(status);
 
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: AppColors.primarySaffron,
         elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Transaction Details',
-          style: GoogleFonts.notoSans(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.whiteCard,
-          ),
+        iconTheme: const IconThemeData(color: AppColors.whiteCard),
+        title: Column(
+          children: [
+            Text(
+              'Transaction Details',
+              style: GoogleFonts.notoSans(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.whiteCard,
+              ),
+            ),
+            Text(
+              'लेन-देन का विवरण',
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 13,
+                color: AppColors.whiteCard.withValues(alpha: 0.9),
+              ),
+            ),
+          ],
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSummaryCard(amountColor, sign),
-            const SizedBox(height: 20),
-            _buildDetailsCard(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(Color amountColor, String sign) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isCredit ? 'Credit' : 'Debit',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.maroon,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dateTimeLabel,
-                      style: GoogleFonts.notoSans(
-                        fontSize: 12,
-                        color: AppColors.maroon.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '$sign₹${amount.toStringAsFixed(2)}',
-                  style: GoogleFonts.notoSans(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: amountColor,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(children: [_buildStatusChip()]),
+            _buildStatusHeader(statusColor, statusIcon),
+            const SizedBox(height: 24),
+            _buildAmountCard(),
+            const SizedBox(height: 24),
+            _buildInfoCard(context),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusChip() {
-    Color bg;
-    Color fg;
-    switch (status.toLowerCase()) {
-      case 'pending':
-        bg = Colors.orange.shade100;
-        fg = Colors.orange.shade800;
-        break;
-      case 'failed':
-        bg = Colors.red.shade100;
-        fg = Colors.red.shade800;
-        break;
-      default:
-        bg = Colors.green.shade100;
-        fg = Colors.green.shade800;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status,
-        style: GoogleFonts.notoSans(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: fg,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailsCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Details',
-              style: GoogleFonts.notoSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.maroon,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'विवरण',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 14,
-                color: AppColors.maroon.withValues(alpha: 0.85),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildInfoRow(labelEn: 'Description', value: description),
-            const Divider(height: 24),
-            _buildInfoRow(
-              labelEn: 'Payment Reference ID',
-              value: paymentReferenceId,
-              isMonospace: true,
-            ),
-            const Divider(height: 24),
-            _buildInfoRow(labelEn: 'Added by', value: addedBy),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow({
-    required String labelEn,
-    required String value,
-    bool isMonospace = false,
-  }) {
+  Widget _buildStatusHeader(Color color, IconData icon) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 48),
+        ),
+        const SizedBox(height: 12),
         Text(
-          labelEn,
+          status.toUpperCase(),
           style: GoogleFonts.notoSans(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.maroon.withValues(alpha: 0.9),
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: color,
+            letterSpacing: 1.2,
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          value,
-          style:
-              (isMonospace ? GoogleFonts.robotoMono() : GoogleFonts.notoSans())
-                  .copyWith(
-                    fontSize: 13,
-                    color: AppColors.maroon.withValues(alpha: 0.9),
-                  ),
+          dateTimeLabel,
+          style: GoogleFonts.notoSans(
+            fontSize: 14,
+            color: AppColors.maroon.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
+  }
+
+  Widget _buildAmountCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.whiteCard,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            isCredit ? 'DEPOSITED AMOUNT / जमा राशि' : 'WITHDRAWAL AMOUNT / निकासी राशि',
+            style: GoogleFonts.notoSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.maroon.withValues(alpha: 0.5),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '₹${amount.toStringAsFixed(2)}',
+            style: GoogleFonts.notoSans(
+              fontSize: 36,
+              fontWeight: FontWeight.w900,
+              color: isCredit ? Colors.green.shade700 : Colors.red.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.whiteCard,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDetailItem(
+            Icons.description_outlined,
+            'Description / विवरण',
+            description.isEmpty ? 'N/A' : description,
+          ),
+          const Divider(height: 32),
+          _buildDetailItem(
+            Icons.receipt_long_outlined,
+            'Reference ID / संदर्भ आईडी',
+            paymentReferenceId.isEmpty ? 'N/A' : paymentReferenceId,
+          ),
+          const Divider(height: 32),
+          _buildDonorItem(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 22, color: AppColors.primarySaffron),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.notoSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.maroon.withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: GoogleFonts.notoSansDevanagari(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.maroon,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDonorItem(BuildContext context) {
+    final donorName = userData?['name'] as String? ?? 'N/A';
+    final village = userData?['village'] as String? ?? '';
+    final district = userData?['district'] as String? ?? '';
+    
+    String subInfo = 'N/A';
+    if (village.isNotEmpty || district.isNotEmpty) {
+       subInfo = [village, district].where((s) => s.isNotEmpty).join(', ');
+    } else if (userData == null && addedBy.isNotEmpty) {
+       subInfo = 'ID: $addedBy';
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.person_outline, size: 22, color: AppColors.primarySaffron),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Added By / द्वारा जोड़ा गया',
+                style: GoogleFonts.notoSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.maroon.withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                donorName,
+                style: GoogleFonts.notoSansDevanagari(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.maroon,
+                ),
+              ),
+              if (subInfo.isNotEmpty)
+                Text(
+                  subInfo,
+                  style: GoogleFonts.notoSansDevanagari(
+                    fontSize: 13,
+                    color: AppColors.maroon.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (userData != null) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => UserProfileScreen(user: userData!),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: Text(
+                    'View Profile / प्रोफाइल देखें',
+                    style: GoogleFonts.notoSansDevanagari(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: AppColors.primarySaffron,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return Colors.green.shade700;
+      case 'pending':
+        return Colors.orange.shade700;
+      case 'failed':
+      case 'dropped':
+        return Colors.red.shade700;
+      default:
+        return AppColors.maroon;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return Icons.check_circle_outline;
+      case 'pending':
+        return Icons.access_time;
+      case 'failed':
+      case 'dropped':
+        return Icons.error_outline;
+      default:
+        return Icons.help_outline;
+    }
   }
 }

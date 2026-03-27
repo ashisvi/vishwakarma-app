@@ -4,46 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../services/supabase_service.dart';
 import '../../services/posts_service.dart';
-
-String _formatDate(String? dateStr) {
-  if (dateStr == null || dateStr.isEmpty) return '';
-  try {
-    final dt = DateTime.parse(dateStr).toLocal();
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays > 7) {
-      return '${_monthName(dt.month)} ${dt.day}, ${dt.year}';
-    } else if (diff.inDays > 0) {
-      return '${diff.inDays}d ago';
-    } else if (diff.inHours > 0) {
-      return '${diff.inHours}h ago';
-    } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  } catch (_) {
-    return dateStr;
-  }
-}
-
-String _monthName(int month) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return months[month - 1];
-}
+import '../../utils/date_utils.dart';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({super.key, required this.post});
@@ -229,7 +190,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       ),
                                     ),
                                     Text(
-                                      _formatDate(createdAt),
+                                      formatDate(createdAt),
                                       style: GoogleFonts.notoSans(
                                         fontSize: 12,
                                         color: AppColors.maroon.withValues(
@@ -569,7 +530,7 @@ class _CommentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _formatDate(createdAt),
+                  formatDate(createdAt),
                   style: GoogleFonts.notoSans(
                     fontSize: 12,
                     color: AppColors.maroon.withValues(alpha: 0.55),

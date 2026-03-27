@@ -159,3 +159,66 @@ Future<bool> isUserAdmin() async {
     return false;
   }
 }
+
+/// Fetch all verified users to display in the member directory
+Future<List<Map<String, dynamic>>> fetchVerifiedMembers() async {
+  try {
+    final resp = await supabase
+        .from('users')
+        .select()
+        .eq('is_verified', true)
+        .order('name', ascending: true);
+    return List<Map<String, dynamic>>.from(resp as List);
+  } catch (e) {
+    return [];
+  }
+}
+
+/// Fetch all pending (unverified) users
+Future<List<Map<String, dynamic>>> fetchPendingMembers() async {
+  try {
+    final resp = await supabase
+        .from('users')
+        .select()
+        .eq('is_verified', false)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(resp as List);
+  } catch (e) {
+    debugPrint('fetchPendingMembers error: $e');
+    return [];
+  }
+}
+
+/// Update user verification status and role
+Future<bool> updateUserVerification(String userId, bool isVerified, String role) async {
+  try {
+    await supabase.from('users').update({
+      'is_verified': isVerified,
+      'role': role,
+    }).eq('id', userId);
+    return true;
+  } catch (e) {
+    debugPrint('updateUserVerification error: $e');
+    return false;
+  }
+}
+
+/// Insert a new location (e.g., state, district, block, village)
+Future<bool> insertLocation({
+  required String name,
+  required String type,
+  String? parentId,
+}) async {
+  try {
+    await supabase.from('locations').insert({
+      'name': name.trim(),
+      'type': type,
+      'parent_id': ?parentId,
+      'is_active': true,
+    });
+    return true;
+  } catch (e) {
+    debugPrint('insertLocation error: $e');
+    return false;
+  }
+}

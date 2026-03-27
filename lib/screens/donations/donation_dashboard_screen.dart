@@ -158,6 +158,7 @@ class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
                                 description: tx['description'] as String? ?? '',
                                 paymentReferenceId: tx['upi_ref'] as String? ?? '',
                                 addedBy: tx['created_by'] as String? ?? '',
+                                userData: tx['users'] as Map<String, dynamic>?,
                               ),
                             ),
                           ),

@@ -97,3 +97,37 @@ Future<Map<String, dynamic>?> createTransaction(
     rethrow;
   }
 }
+
+Future<Map<String, dynamic>?> insertCashTransaction({
+  required double amount,
+  required String donorName,
+  String? description,
+}) async {
+  try {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception('No authenticated user');
+    }
+
+    final res = await _supabase
+        .from('transactions')
+        .insert({
+          'type': 'credit',
+          'amount': amount,
+          'status': 'success',
+          'mode': 'cash',
+          'description': description != null && description.trim().isNotEmpty
+              ? description.trim()
+              : 'Cash Donation - $donorName',
+          'created_by': user.id, // The admin's ID
+        })
+        .select()
+        .maybeSingle();
+
+    if (res == null) return null;
+    return Map<String, dynamic>.from(res as Map);
+  } catch (e) {
+    debugPrint('insertCashTransaction error: $e');
+    rethrow;
+  }
+}

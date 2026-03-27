@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import './posts/home_feed_screen.dart';
 import './donations/donation_dashboard_screen.dart';
 import './profile/profile_screen.dart';
+import './members/members_list_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -36,19 +37,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   List<Widget> get _screens => [
     HomeFeedScreen(isAdmin: _isUserAdmin),
     const DonationDashboardScreen(),
+    const MembersListScreen(),
     const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     // Reserve space for the rounded bottom nav.
-    final double _bottomReserve =
+    final double bottomReserve =
         MediaQuery.of(context).viewPadding.bottom + 74.0;
 
     return Scaffold(
       extendBody: true,
       body: Padding(
-        padding: EdgeInsets.only(bottom: _bottomReserve),
+        padding: EdgeInsets.only(bottom: bottomReserve),
         child: IndexedStack(index: _currentIndex, children: _screens),
       ),
 
@@ -89,6 +91,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                   _NavIconButton(
                     index: 2,
+                    currentIndex: _currentIndex,
+                    icon: Icons.groups_rounded,
+                    onTap: (i) => setState(() => _currentIndex = i),
+                  ),
+                  _NavIconButton(
+                    index: 3,
                     currentIndex: _currentIndex,
                     icon: Icons.person_rounded,
                     onTap: (i) => setState(() => _currentIndex = i),

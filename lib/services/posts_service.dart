@@ -9,15 +9,16 @@ import 'supabase_service.dart';
 const String kPostImageBucket = 'post-images';
 
 /// Fetch posts with related data: images, author info, reaction counts and comment counts.
-Future<List<Map<String, dynamic>>> fetchPostsDetailed({int limit = 50}) async {
+Future<List<Map<String, dynamic>>> fetchPostsDetailed({int limit = 50, String? userId}) async {
   try {
     // 1) fetch posts
-    final postsResp = await supabase
-        .from('posts')
-        .select()
-        .order('created_at', ascending: false)
-        .limit(limit);
+    dynamic query = supabase.from('posts').select();
+        
+    if (userId != null) {
+      query = query.eq('created_by', userId);
+    }
 
+    final postsResp = await query.order('created_at', ascending: false).limit(limit);
     debugPrint(postsResp.toString());
     final posts = List<Map<String, dynamic>>.from(postsResp as List);
 
