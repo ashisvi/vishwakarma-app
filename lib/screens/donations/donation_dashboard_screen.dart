@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/donation_service.dart';
 import 'donation_amount_screen.dart';
 import 'transaction_details_screen.dart';
@@ -81,52 +82,25 @@ class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
     }
   }
 
-  String _formatDate(String? createdAt) {
-    if (createdAt == null) return '';
-    try {
-      final dt = DateTime.parse(createdAt).toLocal();
-      return '${dt.day.toString().padLeft(2, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return createdAt;
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        centerTitle: true,
-        title: Column(
-          children: [
-            Text(
-              'दान पात्र',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'Donations',
-              style: GoogleFonts.notoSans(
-                fontSize: 13,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Donations',
+        titleHi: 'दान पात्र',
+        showBackButton: false,
       ),
       body: Column(
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: _SummaryCard(balance: _balance, isLoading: _isLoading),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Expanded(
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
@@ -152,7 +126,7 @@ class _DonationDashboardScreenState extends State<DonationDashboardScreen> {
                                 amount: (tx['amount'] as num).toDouble(),
                                 isCredit: tx['type'] == 'credit',
                                 status: tx['status'] as String? ?? '',
-                                dateTimeLabel: _formatDate(
+                                dateTimeLabel: formatTransactionDate(
                                   tx['created_at']?.toString(),
                                 ),
                                 description: tx['description'] as String? ?? '',
@@ -190,15 +164,24 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.whiteCard,
+            AppColors.primarySaffron.withValues(alpha: 0.05),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primarySaffron.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -256,7 +239,7 @@ class _TransactionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
       itemCount: transactions.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {

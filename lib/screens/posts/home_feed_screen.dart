@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/posts_service.dart';
 import '../../widgets/post_card.dart';
 import '../members/user_profile_screen.dart';
@@ -32,39 +33,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     });
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: AppColors.primarySaffron,
-      elevation: 0,
-      centerTitle: true,
-      title: Column(
-        children: [
-          Text(
-            'विश्वकर्मा युवा संगठन',
-            style: GoogleFonts.notoSansDevanagari(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.whiteCard,
-            ),
-          ),
-          Text(
-            'Vishwakarma Yuva Sangathan',
-            style: GoogleFonts.notoSans(
-              fontSize: 13,
-              color: AppColors.whiteCard.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFab(BuildContext context) {
     return FloatingActionButton.extended(
       onPressed: () async {
-        final res = await Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
+        final res = await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+        );
         if (res == true) {
           await _refresh();
         }
@@ -83,7 +57,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: _buildAppBar(context),
+      appBar: buildAppHeader(
+        titleEn: 'Vishwakarma Yuva Sangathan',
+        titleHi: 'विश्वकर्मा युवा संगठन',
+        showBackButton: false,
+      ),
       body: _HomeFeedBody(futurePosts: _futurePosts, onRefresh: _refresh),
       floatingActionButton: widget.isAdmin ? _buildFab(context) : null,
     );
@@ -102,8 +80,7 @@ class _HomeFeedBody extends StatefulWidget {
 
 class _HomeFeedBodyState extends State<_HomeFeedBody> {
   List<Map<String, dynamic>> _posts = [];
-  final Map<String, String?> _userReactions =
-      {}; // postId -> 'like'|'dislike'|null
+  final Map<String, String?> _userReactions = {};
 
   @override
   void initState() {
@@ -223,9 +200,7 @@ class _HomeFeedBodyState extends State<_HomeFeedBody> {
                 },
                 onTap: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PostDetailScreen(post: p),
-                    ),
+                    MaterialPageRoute(builder: (_) => PostDetailScreen(post: p)),
                   );
                   await _handleRefresh();
                 },
@@ -266,7 +241,7 @@ class _PinnedSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppColors.radiusCard),
         border: Border.all(color: AppColors.goldAccent, width: 1),
         boxShadow: [
           BoxShadow(
@@ -284,12 +259,16 @@ class _PinnedSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.goldAccent.withValues(alpha: 0.12),
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
+                top: Radius.circular(16),
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.push_pin, size: 18, color: AppColors.primarySaffron),
+                Icon(
+                  Icons.push_pin,
+                  size: 18,
+                  color: AppColors.primarySaffron,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Pinned Announcement / पिन की घोषणा',
@@ -311,17 +290,13 @@ class _PinnedSection extends StatelessWidget {
               onReact: onReact,
               onOpenComments: (postId) async {
                 await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PostDetailScreen(post: postMap),
-                  ),
+                  MaterialPageRoute(builder: (_) => PostDetailScreen(post: postMap)),
                 );
                 await onRefresh();
               },
               onTap: () async {
                 await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PostDetailScreen(post: postMap),
-                  ),
+                  MaterialPageRoute(builder: (_) => PostDetailScreen(post: postMap)),
                 );
                 await onRefresh();
               },

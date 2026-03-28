@@ -18,7 +18,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   AppLanguage? _selectedLanguage;
 
   static const double _minTouchTargetHeight = 56.0;
-  static const double _cardPadding = 20.0;
+  static const double _cardPadding = 12.0;
   static const double _cardBorderRadius = 20.0;
   static const double _selectedBorderWidth = 4.0;
 
@@ -28,7 +28,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       backgroundColor: AppColors.creamBackground,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Column(
             children: [
               const SizedBox(height: 32),

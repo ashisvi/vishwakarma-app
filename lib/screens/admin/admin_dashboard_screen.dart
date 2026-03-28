@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import 'manual_donation_screen.dart';
 import 'user_verification_screen.dart';
 import 'location_entry_screen.dart';
-
-import 'package:google_fonts/google_fonts.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -13,48 +14,35 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.whiteCard),
-        title: Column(
-          children: [
-            Text(
-              'Admin Panel',
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'व्यवस्थापक पैनल',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 13,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Admin Panel',
+        titleHi: 'व्यवस्थापक पैनल',
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(12),
         children: [
-          const Text(
+          Text(
             'Utility Features',
-            style: TextStyle(
+            style: GoogleFonts.notoSans(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
-              fontFamily: 'NotoSansDevanagari',
+              color: AppColors.maroon,
+            ),
+          ),
+          Text(
+            'उपयोगी सुविधाएँ',
+            style: GoogleFonts.notoSansDevanagari(
+              fontSize: 14,
+              color: AppColors.maroon.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 16),
           _buildAdminCard(
             context,
-            title: 'Manual Donation / ऑफलाइन दान',
-            subtitle: 'Record cash donations manually.\n(ऑफ़लाइन नकद दान दर्ज करें)',
+            title: 'Manual Donation',
+            titleHi: 'ऑफलाइन दान',
+            subtitle: 'Record cash donations manually.',
+            subtitleHi: 'ऑफ़लाइन नकद दान दर्ज करें',
             icon: Icons.payments_rounded,
             onTap: () {
               Navigator.push(
@@ -65,8 +53,10 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           _buildAdminCard(
             context,
-            title: 'User Verification / उपयोगकर्ता सत्यापन',
-            subtitle: 'Approve new members and assign roles.\n(नए सदस्यों को स्वीकृत करें और भूमिकाएँ दें)',
+            title: 'User Verification',
+            titleHi: 'उपयोगकर्ता सत्यापन',
+            subtitle: 'Approve new members and assign roles.',
+            subtitleHi: 'नए सदस्यों को स्वीकृत करें और भूमिकाएँ दें',
             icon: Icons.verified_user_rounded,
             onTap: () {
               Navigator.push(
@@ -77,8 +67,10 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           _buildAdminCard(
             context,
-            title: 'Location Entry / स्थान जोड़ें',
-            subtitle: 'Add new States, Districts, Blocks, and Villages.\n(नए राज्य, जिले, ब्लॉक और गाँव जोड़ें)',
+            title: 'Location Entry',
+            titleHi: 'स्थान जोड़ें',
+            subtitle: 'Add new States, Districts, Blocks, and Villages.',
+            subtitleHi: 'नए राज्य, जिले, ब्लॉक और गाँव जोड़ें',
             icon: Icons.add_location_alt_rounded,
             onTap: () {
               Navigator.push(
@@ -95,17 +87,28 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _buildAdminCard(
     BuildContext context, {
     required String title,
+    required String titleHi,
     required String subtitle,
+    required String subtitleHi,
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.whiteCard,
+        borderRadius: BorderRadius.circular(AppColors.radiusCard),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppColors.radiusCard),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -124,25 +127,32 @@ class AdminDashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      '$title / $titleHi',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppColors.maroon,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: GoogleFonts.notoSans(
                         fontSize: 13,
-                        color: Colors.grey[600],
+                        color: AppColors.subtitleGrey,
+                      ),
+                    ),
+                    Text(
+                      subtitleHi,
+                      style: GoogleFonts.notoSansDevanagari(
+                        fontSize: 12,
+                        color: AppColors.subtitleGrey,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+              Icon(Icons.chevron_right_rounded, color: AppColors.subtitleGrey),
             ],
           ),
         ),

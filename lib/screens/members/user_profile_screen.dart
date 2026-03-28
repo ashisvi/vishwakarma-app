@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/posts_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/post_card.dart';
@@ -77,40 +78,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.whiteCard),
-        title: Column(
-          children: [
-            Text(
-              name,
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'User Profile / उपयोगकर्ता प्रोफ़ाइल',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 12,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
-      ),
+      appBar: buildAppHeader(titleEn: name, titleHi: 'सदस्य प्रोफ़ाइल'),
       body: RefreshIndicator(
         onRefresh: _loadUserPosts,
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _buildProfileHeader()),
-            SliverToBoxAdapter(child: _buildDetailsSection()),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              sliver: SliverToBoxAdapter(child: _buildDetailsCard()),
+            ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -142,139 +122,223 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  // ─── Saffron header with avatar, name, father's name, and tag chips ───
   Widget _buildProfileHeader() {
     final name = widget.user['name'] as String? ?? 'Unknown';
+    final fatherName = widget.user['father_name'] as String? ?? '';
     final designation = widget.user['designation'] as String?;
+    final photoUrl = widget.user['avatar_url'] as String?;
 
-    String roleDisplay = designation != null && designation.trim().isNotEmpty 
-        ? designation 
-        : 'Member';
+    String roleDisplay = designation != null && designation.trim().isNotEmpty
+        ? designation
+        : '';
+
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(color: AppColors.primarySaffron),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
+      child: Column(
+        children: [
+          // ─ Avatar ─
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.whiteCard.withValues(alpha: 0.15),
+              border: Border.all(color: AppColors.whiteCard, width: 3),
+            ),
+            child: ClipOval(
+              child: photoUrl != null && photoUrl.isNotEmpty
+                  ? Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.person,
+                        size: 52,
+                        color: AppColors.whiteCard,
+                      ),
+                    )
+                  : Icon(Icons.person, size: 52, color: AppColors.whiteCard),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // ─ Name ─
+          Text(
+            name,
+            style: GoogleFonts.notoSans(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.whiteCard,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          // ─ Father's name ─
+          if (fatherName.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              'पिता का नाम: $fatherName',
+              style: GoogleFonts.notoSansDevanagari(
+                fontSize: 14,
+                color: AppColors.whiteCard.withValues(alpha: 0.92),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          const SizedBox(height: 12),
+          // ─ Tag chips ─
+          if (roleDisplay.isNotEmpty)
+            _buildChip(
+              Icons.verified_user,
+              roleDisplay,
+              AppColors.whiteCard,
+              AppColors.maroon,
+              false,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(
+    IconData icon,
+    String text,
+    Color bgColor,
+    Color textColor,
+    bool hasBorder,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: hasBorder
+            ? Border.all(color: textColor.withValues(alpha: 0.35))
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: GoogleFonts.notoSansDevanagari(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Details card ─── matching profile_screen's icon+label+value pattern
+  Widget _buildDetailsCard() {
+    final fatherName = widget.user['father_name'] as String? ?? '';
+    final education = widget.user['education'] as String? ?? '';
+    final profession = widget.user['profession'] as String? ?? '';
+    final phone = widget.user['phone'] as String? ?? '';
+    final addressLine = widget.user['address_line'] as String? ?? '';
+
+    final village = widget.user['village'] as String? ?? '';
+    final block = widget.user['block'] as String? ?? '';
+    final district = widget.user['district'] as String? ?? '';
+    final state = widget.user['state'] as String? ?? '';
+
+    // Build info entries, skip empty ones
+    final entries = <_InfoEntry>[];
+    if (phone.isNotEmpty) {
+      entries.add(_InfoEntry(Icons.phone_outlined, 'Phone / फोन', phone));
+    }
+    if (addressLine.isNotEmpty) {
+      entries.add(
+        _InfoEntry(Icons.home_work_outlined, 'Address / पता', addressLine),
+      );
+    }
+    if (education.isNotEmpty) {
+      entries.add(
+        _InfoEntry(Icons.school_outlined, 'Education / शिक्षा', education),
+      );
+    }
+    if (profession.isNotEmpty) {
+      entries.add(
+        _InfoEntry(Icons.work_outline, 'Profession / व्यवसाय', profession),
+      );
+    }
+    if (village.isNotEmpty) {
+      entries.add(_InfoEntry(Icons.home_outlined, 'Village / गाँव', village));
+    }
+    if (block.isNotEmpty) {
+      entries.add(_InfoEntry(Icons.map_outlined, 'Block / ब्लॉक', block));
+    }
+    if (district.isNotEmpty) {
+      entries.add(
+        _InfoEntry(Icons.location_city_outlined, 'District / जिला', district),
+      );
+    }
+    if (state.isNotEmpty) {
+      entries.add(_InfoEntry(Icons.flag_outlined, 'State / राज्य', state));
+    }
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        borderRadius: BorderRadius.circular(AppColors.radiusCard),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primarySaffron, width: 2),
-            ),
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: AppColors.primarySaffron.withValues(alpha: 0.1),
-              child: Text(
-                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: GoogleFonts.notoSans(
-                  color: AppColors.primarySaffron,
-                  fontSize: 44,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            name,
-            style: GoogleFonts.notoSansDevanagari(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: AppColors.maroon,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primarySaffron.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primarySaffron.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              roleDisplay,
-              style: GoogleFonts.notoSansDevanagari(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: AppColors.maroon,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailsSection() {
-    final fatherName = widget.user['father_name'] as String? ?? '';
-    final education = widget.user['education'] as String? ?? '';
-    final profession = widget.user['profession'] as String? ?? '';
-    final phone = widget.user['phone'] as String? ?? '';
-    
-    final village = widget.user['village'] as String? ?? '';
-    final block = widget.user['block'] as String? ?? '';
-    final district = widget.user['district'] as String? ?? '';
-    final state = widget.user['state'] as String? ?? '';
-    
-    List<String> locParts = [];
-    if (village.isNotEmpty) locParts.add(village);
-    if (block.isNotEmpty) locParts.add(block);
-    if (district.isNotEmpty) locParts.add(district);
-    if (state.isNotEmpty) locParts.add(state);
-    final location = locParts.join(', ');
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-      decoration: BoxDecoration(
-        color: AppColors.whiteCard,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow(Icons.person_outline, "Father's Name / पिता का नाम", fatherName),
-          if (education.isNotEmpty) ...[
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
-            _buildInfoRow(Icons.school_outlined, "Education / शिक्षा", education),
-          ],
-          if (profession.isNotEmpty) ...[
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
-            _buildInfoRow(Icons.work_outline, "Profession / व्यवसाय", profession),
-          ],
-          if (phone.isNotEmpty) ...[
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
-            _buildInfoRow(Icons.phone_outlined, "Phone / फोन", phone, isPhone: true),
-          ],
-          if (location.isNotEmpty) ...[
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
-            _buildInfoRow(Icons.location_on_outlined, "Address / पता", location),
+          Row(
+            children: [
+              Text(
+                'Details',
+                style: GoogleFonts.notoSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.maroon,
+                ),
+              ),
+              Text(
+                ' / विवरण',
+                style: GoogleFonts.notoSansDevanagari(
+                  fontSize: 14,
+                  color: AppColors.maroon.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (int i = 0; i < entries.length; i++) ...[
+            _buildInfoRow(entries[i].icon, entries[i].label, entries[i].value),
+            if (i < entries.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Divider(
+                  height: 1,
+                  color: AppColors.creamBackground,
+                  thickness: 1.5,
+                ),
+              ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {bool isPhone = false}) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
     if (value.isEmpty) return const SizedBox.shrink();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,14 +351,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           child: Icon(icon, size: 20, color: AppColors.primarySaffron),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: GoogleFonts.notoSans(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                style: GoogleFonts.notoSans(
+                  fontSize: 11,
+                  color: AppColors.subtitleGrey,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -317,7 +385,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return const SliverToBoxAdapter(
         child: Padding(
           padding: EdgeInsets.all(48.0),
-          child: Center(child: CircularProgressIndicator(color: AppColors.primarySaffron)),
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primarySaffron),
+          ),
         ),
       );
     }
@@ -325,19 +395,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (_userPosts.isEmpty) {
       return SliverToBoxAdapter(
         child: Container(
-          margin: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: AppColors.whiteCard,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppColors.radiusCardLarge),
           ),
           child: Column(
             children: [
-              Icon(Icons.post_add_rounded, size: 64, color: AppColors.primarySaffron.withValues(alpha: 0.2)),
+              Icon(
+                Icons.post_add_rounded,
+                size: 64,
+                color: AppColors.primarySaffron.withValues(alpha: 0.2),
+              ),
               const SizedBox(height: 16),
               Text(
                 'No posts yet / कोई पोस्ट नहीं',
-                style: GoogleFonts.notoSans(color: Colors.grey[600], fontSize: 16, fontWeight: FontWeight.w600),
+                style: GoogleFonts.notoSans(
+                  color: AppColors.subtitleGrey,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -346,32 +424,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final post = _userPosts[index];
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: PostCard.fromMap(
-              postMap: post,
-              userReaction: _userReactions[post['id']],
-              onReact: _onReact,
-              onOpenComments: (postId) async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
-                );
-                _loadUserPosts();
-              },
-              onTap: () async {
-                 await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
-                );
-                _loadUserPosts();
-              },
-            ),
-          );
-        },
-        childCount: _userPosts.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final post = _userPosts[index];
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: PostCard.fromMap(
+            postMap: post,
+            userReaction: _userReactions[post['id']],
+            onReact: _onReact,
+            onOpenComments: (postId) async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
+              );
+              _loadUserPosts();
+            },
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
+              );
+              _loadUserPosts();
+            },
+          ),
+        );
+      }, childCount: _userPosts.length),
     );
   }
+}
+
+class _InfoEntry {
+  const _InfoEntry(this.icon, this.label, this.value);
+  final IconData icon;
+  final String label;
+  final String value;
 }

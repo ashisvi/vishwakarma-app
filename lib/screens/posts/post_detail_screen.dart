@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/supabase_service.dart';
 import '../../services/posts_service.dart';
 import '../../utils/date_utils.dart';
@@ -94,25 +95,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primarySaffron,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Post Details',
-              style: GoogleFonts.notoSans(fontWeight: FontWeight.w700),
-            ),
-            Text(
-              'पोस्ट विवरण',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.95),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Post Details',
+        titleHi: 'पोस्ट विवरण',
       ),
       body: Column(
         children: [
@@ -128,7 +113,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     child: Text(
                       'Failed to load comments',
                       style: GoogleFonts.notoSans(
-                        color: Colors.grey,
+                        color: AppColors.subtitleGrey,
                       ),
                     ),
                   );
@@ -137,13 +122,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 final comments = snapshot.data ?? [];
 
                 return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                   children: [
                     // Post Card
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.whiteCard,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppColors.radiusCard),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.06),
@@ -152,7 +137,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -303,7 +288,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       Text(
                         'No comments yet / अभी कोई टिप्पणी नहीं',
                         style: GoogleFonts.notoSans(
-                          color: Colors.grey,
+                          color: AppColors.subtitleGrey,
                         ),
                       )
                     else
@@ -331,7 +316,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           // Comment Input
           SafeArea(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: AppColors.whiteCard,
                 boxShadow: [
@@ -351,7 +336,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       controller: _commentController,
                       decoration: InputDecoration(
                         hintText: 'Write a comment / टिप्पणी लिखें...',
-                        hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                         hintStyle: GoogleFonts.notoSans(fontSize: 14, color: AppColors.subtitleGrey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide.none,
@@ -480,9 +465,18 @@ class _CommentCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isOwn
-            ? AppColors.primarySaffron.withValues(alpha: 0.10)
+            ? AppColors.primarySaffron.withValues(alpha: 0.08)
             : AppColors.whiteCard,
         borderRadius: BorderRadius.circular(12),
+        border: isOwn
+            ? Border.all(
+                color: AppColors.primarySaffron.withValues(alpha: 0.35),
+                width: 1.5,
+              )
+            : Border.all(
+                color: AppColors.subtitleGrey.withValues(alpha: 0.25),
+                width: 1,
+              ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),

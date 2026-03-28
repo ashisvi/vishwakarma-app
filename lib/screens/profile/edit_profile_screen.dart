@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/supabase_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -119,34 +120,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        centerTitle: true,
-        title: Column(
-          children: [
-            Text(
-              'Edit Profile',
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'प्रोफ़ाइल संपादित करें',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 14,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Edit Profile',
+        titleHi: 'प्रोफ़ाइल संपादित करें',
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -314,7 +295,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

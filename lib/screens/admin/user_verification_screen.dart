@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/supabase_service.dart';
 
 class UserVerificationScreen extends StatefulWidget {
@@ -41,6 +42,7 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
   void _showEditUserDialog(Map<String, dynamic> user, bool initiallyVerified) {
     bool isVerified = user['is_verified'] ?? initiallyVerified;
     String role = user['role'] ?? 'member';
+    final TextEditingController designationController = TextEditingController(text: user['designation'] as String? ?? '');
     
     showModalBottomSheet(
       context: context,
@@ -85,7 +87,7 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
                   const SizedBox(height: 16),
 
                   // Role Dropdown
-                  Text('User Role', style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+                  Text('User Role', style: GoogleFonts.notoSans(color: AppColors.maroon, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: role,
@@ -104,6 +106,19 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
                       }
                     },
                   ),
+                  const SizedBox(height: 16),
+
+                  // Designation Field
+                  Text('Designation / पद (English)', style: GoogleFonts.notoSans(color: AppColors.maroon, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: designationController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Adhyaksha, Secretary',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                  ),
                   const SizedBox(height: 32),
 
                   // Save Button
@@ -117,21 +132,24 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
                       onPressed: () async {
                         Navigator.pop(context);
                         setState(() => _isLoading = true);
-                        final success = await updateUserVerification(user['id'], isVerified, role);
+                        final success = await updateUserVerification(
+                          user['id'], 
+                          isVerified, 
+                          role,
+                          designation: designationController.text.trim(),
+                        );
                         if (success) {
                           await _fetchUsers();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('User updated successfully'), backgroundColor: Colors.green),
-                            );
-                          }
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('User updated successfully'), backgroundColor: Colors.green),
+                          );
                         } else {
                           setState(() => _isLoading = false);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Failed to update user'), backgroundColor: Colors.red),
-                            );
-                          }
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to update user'), backgroundColor: Colors.red),
+                          );
                         }
                       },
                       child: Text('Save Changes', style: GoogleFonts.notoSans(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -151,12 +169,12 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
       return Center(
         child: Text(
           'No ${isVerifiedTab ? 'verified' : 'pending'} users found.',
-          style: TextStyle(color: Colors.grey[600]),
+          style: GoogleFonts.notoSans(color: AppColors.subtitleGrey),
         ),
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       itemCount: users.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
@@ -167,12 +185,12 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
           elevation: 2,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             leading: CircleAvatar(
-              backgroundColor: AppColors.primarySaffron.withOpacity(0.2),
+              backgroundColor: AppColors.primarySaffron.withValues(alpha: 0.2),
               child: Text(
                 (user['name'] ?? '?')[0].toUpperCase(),
-                style: const TextStyle(color: AppColors.maroon, fontWeight: FontWeight.bold),
+                style: GoogleFonts.notoSans(color: AppColors.maroon, fontWeight: FontWeight.bold),
               ),
             ),
             title: Text(
@@ -187,19 +205,19 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
                 if (role != 'member')
                   Container(
                     margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.maroon.withOpacity(0.1),
+                      color: AppColors.maroon.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       role.toUpperCase(),
-                      style: const TextStyle(fontSize: 10, color: AppColors.maroon, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.notoSans(fontSize: 10, color: AppColors.maroon, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],
             ),
-            trailing: const Icon(Icons.edit_outlined, color: Colors.grey),
+            trailing: Icon(Icons.edit_outlined, color: AppColors.subtitleGrey),
             onTap: () => _showEditUserDialog(user, isVerifiedTab),
           ),
         );
@@ -213,30 +231,9 @@ class _UserVerificationScreenState extends State<UserVerificationScreen> {
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.creamBackground,
-        appBar: AppBar(
-          centerTitle: true,
-          backgroundColor: AppColors.primarySaffron,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: AppColors.whiteCard),
-          title: Column(
-            children: [
-              Text(
-                'User Verification',
-                style: GoogleFonts.notoSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.whiteCard,
-                ),
-              ),
-              Text(
-                'उपयोगकर्ता सत्यापन',
-                style: GoogleFonts.notoSansDevanagari(
-                  fontSize: 13,
-                  color: AppColors.whiteCard.withValues(alpha: 0.9),
-                ),
-              ),
-            ],
-          ),
+        appBar: buildAppHeader(
+          titleEn: 'User Verification',
+          titleHi: 'उपयोगकर्ता सत्यापन',
           bottom: const TabBar(
             labelColor: AppColors.whiteCard,
             unselectedLabelColor: Colors.white70,

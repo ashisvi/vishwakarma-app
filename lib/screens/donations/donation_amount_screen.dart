@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/donation_service.dart';
 import 'cashfree_payment_screen.dart';
 
@@ -37,35 +38,13 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
     final canDonate = _parsedAmount > 0 && !_isProcessing;
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        centerTitle: true,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'दान राशि दर्ज करें',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'Enter donation amount',
-              style: GoogleFonts.notoSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.whiteCard.withValues(alpha: 0.95),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Make a Donation',
+        titleHi: 'दान करें',
       ),
       body: SingleChildScrollView(
         // Extra bottom space to avoid overlap with the floating button.
-        padding: const EdgeInsets.fromLTRB(16, 32, 16, 120),
+        padding: const EdgeInsets.fromLTRB(12, 24, 12, 120),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -96,15 +75,24 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
   Widget _buildAmountBox() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.whiteCard,
+            AppColors.primarySaffron.withValues(alpha: 0.05),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primarySaffron.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -300,7 +288,8 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
       );
 
       if (completed == true) {
-        if (mounted) Navigator.of(context).pop(true);
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

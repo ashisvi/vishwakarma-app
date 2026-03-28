@@ -1,9 +1,9 @@
 import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/supabase_service.dart';
 import 'edit_profile_screen.dart';
 import '../auth/login_screen.dart';
@@ -88,17 +88,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Profile',
-          style: GoogleFonts.notoSans(
-            fontWeight: FontWeight.w600,
-            color: AppColors.whiteCard,
-          ),
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Profile',
+        titleHi: 'प्रोफ़ाइल',
+        showBackButton: false,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -111,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                   sliver: SliverToBoxAdapter(
                     child: Column(
                       children: [
@@ -179,28 +172,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
               labelHi: 'मोबाइल',
               value: phone,
             ),
-            const Divider(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Divider(height: 1, color: AppColors.creamBackground, thickness: 1.5),
+            ),
             _buildInfoRow(
               icon: Icons.home_outlined,
               labelEn: 'Address',
               labelHi: 'पता',
               value: _profile?['address_line'] ?? '',
             ),
-            const Divider(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Divider(height: 1, color: AppColors.creamBackground, thickness: 1.5),
+            ),
             _buildInfoRow(
               icon: Icons.home_outlined,
               labelEn: 'Village',
               labelHi: 'गाँव',
               value: village,
             ),
-            const Divider(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Divider(height: 1, color: AppColors.creamBackground, thickness: 1.5),
+            ),
             _buildInfoRow(
               icon: Icons.map_outlined,
               labelEn: 'Block',
               labelHi: 'ब्लॉक',
               value: block,
             ),
-            const Divider(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Divider(height: 1, color: AppColors.creamBackground, thickness: 1.5),
+            ),
             _buildInfoRow(
               icon: Icons.location_city_outlined,
               labelEn: 'District',
@@ -329,6 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               builder: (_) => const Center(child: CircularProgressIndicator()),
             );
             signOut().then((_) {
+              if (!mounted) return;
               Navigator.of(context).pop();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -390,7 +396,7 @@ class _ProfileCollapsingHeaderDelegate extends SliverPersistentHeaderDelegate {
       color: AppColors.primarySaffron,
       child: ClipRect(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             mainAxisAlignment: collapsedLayout
                 ? MainAxisAlignment.center
@@ -665,50 +671,6 @@ class _SecondaryActionButton extends StatelessWidget {
           ),
           foregroundColor: AppColors.maroon,
         ),
-      ),
-    );
-  }
-}
-
-class _TextActionButton extends StatelessWidget {
-  const _TextActionButton({
-    required this.icon,
-    required this.labelEn,
-    required this.labelHi,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String labelEn;
-  final String labelHi;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: AppColors.maroon),
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            labelEn,
-            style: GoogleFonts.notoSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.maroon,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            labelHi,
-            style: GoogleFonts.notoSansDevanagari(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.maroon,
-            ),
-          ),
-        ],
       ),
     );
   }

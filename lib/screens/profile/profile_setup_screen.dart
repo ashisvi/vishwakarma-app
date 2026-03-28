@@ -475,7 +475,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
         borderRadius: BorderRadius.circular(_cardBorderRadius),

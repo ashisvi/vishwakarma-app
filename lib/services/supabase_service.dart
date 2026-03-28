@@ -190,11 +190,12 @@ Future<List<Map<String, dynamic>>> fetchPendingMembers() async {
 }
 
 /// Update user verification status and role
-Future<bool> updateUserVerification(String userId, bool isVerified, String role) async {
+Future<bool> updateUserVerification(String userId, bool isVerified, String role, {String? designation}) async {
   try {
     await supabase.from('users').update({
       'is_verified': isVerified,
       'role': role,
+      if (designation != null) 'designation': designation,
     }).eq('id', userId);
     return true;
   } catch (e) {
@@ -213,7 +214,7 @@ Future<bool> insertLocation({
     await supabase.from('locations').insert({
       'name': name.trim(),
       'type': type,
-      'parent_id': ?parentId,
+      'parent_id': parentId,
       'is_active': true,
     });
     return true;

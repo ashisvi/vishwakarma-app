@@ -39,8 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 36.0,
+                  horizontal: 12.0,
+                  vertical: 12.0,
                 ),
                 child: Column(
                   children: [
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildFormCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.whiteCard,
         borderRadius: BorderRadius.circular(_cardBorderRadius),
@@ -287,8 +287,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     signInWithPhone(fullPhone).then((ok) {
+      if (!mounted) return;
       Navigator.of(context).pop(); // dismiss loader
       if (ok) {
+        if (!mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => OtpVerificationScreen(
@@ -298,6 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Failed to send OTP. Try again.'),

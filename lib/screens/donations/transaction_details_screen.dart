@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../members/user_profile_screen.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
@@ -32,33 +33,12 @@ class TransactionDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.whiteCard),
-        title: Column(
-          children: [
-            Text(
-              'Transaction Details',
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'लेन-देन का विवरण',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 13,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Transaction Details',
+        titleHi: 'लेन-देन का विवरण',
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             _buildStatusHeader(statusColor, statusIcon),

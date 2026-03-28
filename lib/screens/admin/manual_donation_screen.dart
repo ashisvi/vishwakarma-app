@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import '../../services/donation_service.dart';
 
 class ManualDonationScreen extends StatefulWidget {
@@ -66,35 +67,14 @@ class _ManualDonationScreenState extends State<ManualDonationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.whiteCard),
-        title: Column(
-          children: [
-            Text(
-              'Manual Donation',
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'ऑफलाइन दान',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 13,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Manual Donation',
+        titleHi: 'ऑफलाइन दान',
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primarySaffron))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(12),
               child: Form(
                 key: _formKey,
                 child: Column(

@@ -56,7 +56,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
           child: SizedBox(
             height: 66, // slightly more compact, still keeps tap >=48dp
             child: Container(

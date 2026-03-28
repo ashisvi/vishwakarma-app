@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
 import 'image_upload_screen.dart';
 import '../../services/posts_service.dart';
 import '../../services/supabase_service.dart';
@@ -33,34 +34,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.primarySaffron,
-        elevation: 0,
-        centerTitle: true,
-        title: Column(
-          children: [
-            Text(
-              'Create Post',
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.whiteCard,
-              ),
-            ),
-            Text(
-              'पोस्ट बनाएँ',
-              style: GoogleFonts.notoSansDevanagari(
-                fontSize: 14,
-                color: AppColors.whiteCard.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+      appBar: buildAppHeader(
+        titleEn: 'Create Post',
+        titleHi: 'पोस्ट बनाएँ',
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -166,7 +147,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

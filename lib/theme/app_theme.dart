@@ -22,4 +22,12 @@ class AppColors {
   static const Color whiteCard = Color(0xFFFFFFFF);
 
   static const Color authorizedGreen = Color(0xFF2E7D32);
+
+  /// Neutral grey for subtitles and secondary labels.
+  static const Color subtitleGrey = Color(0xFF757575);
+
+  // ─── Standard border radii ───
+  static const double radiusCard = 16.0;
+  static const double radiusCardLarge = 20.0;
+  static const double radiusInput = 14.0;
 }
