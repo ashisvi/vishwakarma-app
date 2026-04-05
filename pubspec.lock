@@ -206,14 +206,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_cashfree_pg_sdk:
-    dependency: "direct main"
-    description:
-      name: flutter_cashfree_pg_sdk
-      sha256: "05f973fabc59a5721db471279ab447899921651dbf546795a5d7fb3d712b4418"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.10+48"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -251,6 +243,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_upi_intent:
+    dependency: "direct main"
+    description:
+      path: "../flutter_upi_intent"
+      relative: true
+    source: path
+    version: "0.0.1"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -384,14 +383,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
-  js:
-    dependency: transitive
-    description:
-      name: js
-      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.6.7"
   jwt_decode:
     dependency: transitive
     description:

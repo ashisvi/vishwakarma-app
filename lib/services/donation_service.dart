@@ -80,7 +80,7 @@ Future<Map<String, dynamic>?> createTransaction(
           'type': 'credit',
           'amount': amount,
           'status': 'success',
-          'mode': 'cashfree',
+          'mode': 'upi',
           'description': description != null && description.trim().isNotEmpty 
               ? description.trim() 
               : 'Donation',

@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header.dart';
 import '../../services/donation_service.dart';
-import 'cashfree_payment_screen.dart';
+import 'upi_payment_screen.dart';
 
 class DonationAmountScreen extends StatefulWidget {
   const DonationAmountScreen({super.key});
@@ -279,7 +279,7 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
       final completed = await Navigator.of(context).push<bool?>(
         MaterialPageRoute(
           builder: (_) =>
-              CashfreePaymentScreen(
+              UpiPaymentScreen(
                 intentId: intentId, 
                 amount: _parsedAmount,
                 message: _messageController.text,
